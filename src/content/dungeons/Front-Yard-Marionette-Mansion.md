@@ -1,9 +1,10 @@
-﻿---
+---
 title: "Front Yard Marionette Mansion"
 emoji: "🎭"
 description: "Front Yard Marionette Mansion late-game guide — requirements, mechanics, and boss strategy."
 tags: ["dungeon", "late-game", "marionette", "boss"]
 order: 2
+category: "Late Game"
 ---
 
 The Front Yard Marionette Mansion is a **Late-Game dungeon** focused on the puppet-themed Marionette boss. The dungeon rewards materials used to craft the **Marionette accessory set** — a strong Dark-attribute set for AA and SK builds.

@@ -4,6 +4,7 @@ emoji: ⚡
 description: "Vikaralamon dungeon."
 tags: []
 order: 99
+category: "Mid Game"
 ---## Recommended Stats
 
 ### Stats for DPS

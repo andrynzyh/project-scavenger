@@ -1,7 +1,7 @@
 ---
 title: "Accessory Guide"
 emoji: 📖
-category: "Guide"
+category: "Basics"
 description: "Complete guide to accessories."
 tags: []
 order: 99

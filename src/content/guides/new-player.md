@@ -4,6 +4,7 @@ emoji: "🆕"
 description: "A step-by-step guide for new players, covering the tutorial, Starter and Journey Digimon setup, early questing, seals, decks, Transcendence, and preparation for Early Game content."
 tags: ["guide", "new-player", "progression", "beginner"]
 order: 2
+category: "Basics"
 ---
 
 A step-by-step guide for new players, covering the tutorial, Starter and Journey Digimon setup, early questing, seals, decks, Transcendence, and preparation for Early Game content.

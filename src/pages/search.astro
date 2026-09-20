@@ -5,15 +5,9 @@ import { getAllCollectionNames } from '../lib/navigation';
 import { resolveIcon, IMAGE_EXT_RE } from '../lib/icons';
 import { withBase } from '../lib/paths';
 
-// One unified search index across EVERY collection (curated + auto folders).
-const baseOf = (name: string): string =>
-  withBase(
-    name === 'digimon'
-      ? '/digimon/'
-      : name === 'accessories'
-        ? '/accessories/'
-        : `/${name}/`
-  );
+// Satu indeks pencarian untuk SEMUA koleksi — URL base selalu /<name>/
+// karena setiap koleksi memakai nama foldernya sebagai segmen URL.
+const baseOf = (name: string): string => withBase(`/${name}/`);
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 const labelOf = (d: Record<string, any>): string =>

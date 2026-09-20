@@ -2,10 +2,8 @@
 #
 # Requirements (sekali setup di repo):
 # 1. Repo Settings → Pages → Source: "GitHub Actions"
-# 2. Tambahkan repository secret ADMIN_PASSWORD berisi password admin lama.
-#    Workflow membuat SHA-256 saat build; password tidak masuk source atau log.
-# 3. Repo Settings → Environments → protected environment "github-pages"
-#    (workflow ini memakai token environment github-pages bawaan).
+# 2. (opsional) Repo Settings → Environments → protected environment
+#    "github-pages" (workflow ini memakai token environment bawaan).
 #
 # Target: https://andrynzyh.github.io/project-scavenger/  (site + base /project-scavenger di astro.config.mjs)
 # Semua internal links memakai withBase()/remarkBaseLinks — deploy harusnya
@@ -45,22 +43,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Hash admin credential
-        id: admin-hash
-        shell: bash
-        run: |
-          if [ -z "${ADMIN_PASSWORD}" ]; then
-            echo "ADMIN_PASSWORD repository secret is required." >&2
-            exit 1
-          fi
-          hash="$(node -e "const crypto = require('node:crypto'); process.stdout.write(crypto.createHash('sha256').update(process.argv[1]).digest('hex'))" "$ADMIN_PASSWORD")"
-          echo "hash=$hash" >> "$GITHUB_OUTPUT"
-        env:
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-
       - name: Build Astro
-        env:
-          PUBLIC_ADMIN_CREDENTIAL_HASH: ${{ steps.admin-hash.outputs.hash }}
         run: npm run build
 
       - name: Upload artifact

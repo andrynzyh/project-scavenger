@@ -4,6 +4,7 @@ emoji: 🏟️
 description: "The Arena dungeon guide."
 tags: []
 order: 99
+category: "Mid Game"
 ---
 Digimon Arena Hero is one of the most important daily activities during Mid Game.
 

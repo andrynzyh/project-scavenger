@@ -1,9 +1,10 @@
-﻿---
+---
 title: "Marine Dragon Domain"
 emoji: "🐲"
 description: "Marine Dragon Domain late-game guide — requirements, mechanics, and boss strategy."
 tags: ["dungeon", "late-game", "marine-dragon", "boss"]
 order: 1
+category: "Late Game"
 ---
 
 Marine Dragon Domain is one of the **entry-level Late-Game dungeons** in DMW. You face a dragon boss that punishes unprepared teams with hard-hitting water mechanics.

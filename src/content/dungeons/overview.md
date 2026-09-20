@@ -1,7 +1,7 @@
 ---
 title: "Dungeon Overview"
 emoji: "🗺️"
-category: "Guide"
+category: "Overview"
 description: "Every dungeon in Digital Masters World — maps, spawn areas, channels and boss strategies."
 tags: ["dungeon", "overview"]
 order: 1

@@ -4,6 +4,7 @@ emoji: 🐉
 description: "Fanglongmon dungeon guide."
 tags: []
 order: 99
+category: "Mid Game"
 ---
 # Fanglongmon
 

@@ -1,28 +1,23 @@
 ---
 /**
- * GENERIC category landing page for AUTO-DISCOVERED collections
- * (src/content/<folder>/ without a dedicated route).
- * Gives every hub card a real "view all" target: /<collection>/
+ * INDEX KOLEKSI — satu halaman untuk SEMUA koleksi (delapan koleksi terdaftar
+ * di src/lib/collections.ts). Menampilkan daftar terkelompok + filter pencarian
+ * + dropdown per-field (mis. Rank/Attribute/Type untuk digimon).
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import EntryIcon from '../../components/EntryIcon.astro';
-import ItemCard from '../../components/ItemCard.astro';
 import { getCollection } from 'astro:content';
 import { withBase } from '../../lib/paths';
-import {
-  getAutoCollectionNames,
-  getSectionByCollection,
-  buildNavSection,
-} from '../../lib/navigation';
+import { getCollectionMeta, COLLECTION_NAMES } from '../../lib/collections';
+import { getSectionByCollection, buildNavSection } from '../../lib/navigation';
 
 export async function getStaticPaths() {
-  return getAutoCollectionNames().map((collection) => ({
-    params: { collection },
-  }));
+  return COLLECTION_NAMES.map((collection) => ({ params: { collection } }));
 }
 
 const { collection } = Astro.params;
-const section = getSectionByCollection(collection)!;
+const section = getSectionByCollection(collection!)!;
+const filters = getCollectionMeta(collection!)?.filters ?? [];
 const entries = await getCollection(
   collection as Parameters<typeof getCollection>[0]
 );
@@ -37,7 +32,7 @@ const nav = buildNavSection(section, entries);
     <p class="back"><a href={withBase('/hub/')}>← All Entries</a></p>
     <h1>{section.label}</h1>
     <p class="muted">
-      {nav.total} pages · grouped by category
+      {nav.total} pages · grouped by {section.groupField ?? 'section'}
     </p>
 
     <div class="filters panel">
@@ -45,6 +40,19 @@ const nav = buildNavSection(section, entries);
         Search
         <input id="f-search" type="search" placeholder={`Cari ${section.label}…`} autocomplete="off" />
       </label>
+      {
+        filters.map((f) => (
+          <label>
+            {f.label}
+            <select id={`f-${f.field}`} data-field={f.field}>
+              <option value="">All</option>
+              {f.options.map((opt) => (
+                <option value={opt}>{opt}</option>
+              ))}
+            </select>
+          </label>
+        ))
+      }
       <button id="f-reset" class="btn" type="button">✕ Reset</button>
       <p id="f-count" class="f-count muted" aria-live="polite"></p>
     </div>
@@ -57,27 +65,20 @@ const nav = buildNavSection(section, entries);
           </h2>
           <div class="card-grid">
             {group.items.map((item) => (
-              <div class="cell" data-name={item.title.toLowerCase()}>
-                {collection === 'items' ? (
-                  <ItemCard
-                    id={item.id}
-                    href={item.href}
-                    title={item.title}
-                    emoji={item.emoji}
-                    icon={item.icon}
-                    category={item.category}
-                    owner={item.owner}
-                    description={item.description}
-                  />
-                ) : (
-                  <a class="g-card panel" href={item.href}>
-                    <span class="g-icon" aria-hidden="true">
-                      <EntryIcon name={item.icon} emoji={item.emoji} />
-                    </span>
-                    <h3>{item.title}</h3>
-                    {item.description && <p>{item.description}</p>}
-                  </a>
+              <div
+                class="cell"
+                data-name={item.title.toLowerCase()}
+                {...Object.fromEntries(
+                  filters.map((f) => [`data-${f.field}`, item.values[f.field] ?? ''])
                 )}
+              >
+                <a class="g-card panel" href={item.href}>
+                  <span class="g-icon" aria-hidden="true">
+                    <EntryIcon name={item.icon} emoji={item.emoji} />
+                  </span>
+                  <h3>{item.title}</h3>
+                  {item.description && <p>{item.description}</p>}
+                </a>
               </div>
             ))}
           </div>
@@ -92,16 +93,34 @@ const nav = buildNavSection(section, entries);
   const resetBtn = document.getElementById('f-reset');
   const countEl = document.getElementById('f-count');
 
+  // Dropdown filter dibangun dinamis per koleksi — ambil semuanya generik.
+  const selects = Array.from(
+    document.querySelectorAll<HTMLSelectElement>('.filters select')
+  );
   const cells = Array.from(document.querySelectorAll<HTMLElement>('.cell'));
   const sections = Array.from(document.querySelectorAll<HTMLElement>('section[data-group]'));
 
   function applyFilters(): void {
     const search = searchInput.value.trim().toLowerCase();
+    const active = new Map<string, string>();
+    for (const sel of selects) {
+      const field = sel.dataset.field ?? '';
+      if (sel.value) active.set(field, sel.value);
+    }
+
     let visible = 0;
 
     for (const cell of cells) {
       const name = (cell.dataset.name ?? '').toLowerCase();
-      const show = !search || name.includes(search);
+      let show = !search || name.includes(search);
+      if (show) {
+        for (const [field, value] of active) {
+          if ((cell.dataset[field] ?? '') !== value) {
+            show = false;
+            break;
+          }
+        }
+      }
       cell.hidden = !show;
       if (show) visible++;
     }
@@ -119,110 +138,11 @@ const nav = buildNavSection(section, entries);
   }
 
   searchInput.addEventListener('input', applyFilters);
+  for (const sel of selects) sel.addEventListener('change', applyFilters);
   resetBtn?.addEventListener('click', () => {
     searchInput.value = '';
+    for (const sel of selects) sel.value = '';
     applyFilters();
   });
-
   applyFilters();
 </script>
-
-<style>
-  .count {
-    font-size: 0.8rem;
-    color: var(--accent);
-    vertical-align: middle;
-  }
-
-  /* ---- filter bar ---- */
-  .filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 1rem;
-    margin: 1.25rem 0 2rem;
-  }
-  .filters label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .filters input[type="search"] {
-    min-width: 200px;
-    padding: 0.5rem 0.7rem;
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-    color: var(--text);
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-  }
-  .filters input[type="search"]:focus-visible {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(41, 241, 156, 0.15);
-  }
-  .filters .btn {
-    align-self: flex-end;
-  }
-  .f-count {
-    margin: 0 0 0 auto;
-    align-self: center;
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-  }
-
-  /* ---- card grid ---- */
-  .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-  .cell {
-    display: flex;
-  }
-  .cell[hidden] {
-    display: none;
-  }
-  .cell :global(.g-card),
-  .cell :global(.item-card) {
-    width: 100%;
-  }
-  .g-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.45rem;
-    color: var(--text);
-    transition: border-color 0.15s ease, transform 0.15s ease;
-  }
-  .g-card:hover {
-    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-    transform: translateY(-2px);
-  }
-  .g-card:hover h3 {
-    color: var(--accent);
-  }
-  .g-icon {
-    font-size: 1.4rem;
-  }
-  .g-card h3 {
-    margin: 0;
-    border: none;
-    padding: 0;
-    font-family: var(--font-body);
-    font-size: 1rem;
-    font-weight: 700;
-  }
-  .g-card p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.85rem;
-    line-height: 1.5;
-  }
-</style>

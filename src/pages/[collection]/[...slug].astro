@@ -1,30 +1,23 @@
 ---
 /**
- * GENERIC detail page for AUTO-DISCOVERED collections.
- *
- * Any new folder under src/content/<name>/ (that has no dedicated route)
- * automatically gets URLs here: /<name>/<file>/
- * Curated routes (/digimon/, /gear/) take precedence over this one.
+ * DETAIL ENTRY — satu halaman untuk SEMUA koleksi.
+ * Menangani badge khusus per koleksi (rank/attribute/role untuk digimon,
+ * version/date/type untuk patchnote) + injeksi komponen khusus (tamer,
+ * novice-challenge) + navigasi prev/next.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import EntryIcon from '../../components/EntryIcon.astro';
 import TamerList from '../../components/TamerList.astro';
 import NoviceChallenge from '../../components/NoviceChallenge.astro';
 import { getCollection, render } from 'astro:content';
-import { getAutoCollectionNames } from '../../lib/navigation';
+import { getCollectionMeta, COLLECTION_NAMES } from '../../lib/collections';
+import { getSectionByCollection } from '../../lib/navigation';
 import { resolveIcon } from '../../lib/icons';
 import { withBase } from '../../lib/paths';
 
-/** Special pages that get extra components injected after the markdown body. */
-const SPECIAL_INJECTIONS: Record<string, any> = {
-  'system:tamer': TamerList,
-  'system:novice-challenge': NoviceChallenge,
-};
-
 export async function getStaticPaths() {
-  const names = getAutoCollectionNames();
   const perCollection = await Promise.all(
-    names.map(async (collection) => {
+    COLLECTION_NAMES.map(async (collection) => {
       const entries = await getCollection(
         collection as Parameters<typeof getCollection>[0]
       );
@@ -45,7 +38,7 @@ interface Props {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 
-// Prev / next within the same auto-collection (sorted by "order")
+// Prev / next dalam koleksi yang sama (urut "order")
 const siblings = (
   await getCollection(entry.collection as Parameters<typeof getCollection>[0])
 ).sort(
@@ -58,26 +51,45 @@ const prev = index > 0 ? siblings[index - 1] : undefined;
 const next = index >= 0 && index < siblings.length - 1 ? siblings[index + 1] : undefined;
 
 const data = entry.data as Record<string, any>;
+const section = getSectionByCollection(entry.collection as string)!;
+const meta = getCollectionMeta(entry.collection as string);
 const base = withBase(`/${entry.collection}/`);
+const icon = resolveIcon({
+  collection: entry.collection as string,
+  slug: entry.id,
+  icon: data.icon,
+});
+const isPatchnote = entry.collection === 'patchnote';
+const patchDate = isPatchnote && data.date
+  ? new Date(data.date).toISOString().slice(0, 10)
+  : undefined;
 ---
 
 <BaseLayout title={`${data.title} — project-scavenger`} description={data.description}>
   <article>
     <nav class="crumbs" aria-label="Breadcrumb">
         <a href={withBase('/hub/')}>← All Entries</a> <span>/</span>
-        <a href={base}>{entry.collection}</a> <span>/</span>
+        <a href={base}>{section.label}</a> <span>/</span>
         <span class="here">{data.title}</span>
       </nav>
 
       <header class="head panel">
         <span class="emoji">
-          <EntryIcon name={resolveIcon({ collection: entry.collection, slug: entry.id, icon: data.icon })} emoji={data.emoji} />
+          <EntryIcon name={icon} emoji={data.emoji} />
         </span>
         <div>
           <h1>{data.title}</h1>
           <div class="meta">
             {data.category && <span class="badge blue">{data.category}</span>}
+            {data.rank && <span class="badge accent">{data.rank}</span>}
+            {data.attribute && <span class="badge">{data.attribute}</span>}
+            {data.role && <span class="badge">{data.role}</span>}
             {data.owner && <span class="badge accent">Owner: {data.owner}</span>}
+            {isPatchnote && data.version && <span class="badge blue">v{data.version}</span>}
+            {isPatchnote && patchDate && <span class="badge">{patchDate}</span>}
+            {isPatchnote && data.type && (
+              <span class:list={['badge', { major: data.type === 'Major' }]}>{data.type}</span>
+            )}
           </div>
         </div>
       </header>
@@ -86,9 +98,8 @@ const base = withBase(`/${entry.collection}/`);
         <Content />
       </div>
 
-      {SPECIAL_INJECTIONS[`${entry.collection}:${entry.id}`] && (
-        <SPECIAL_INJECTIONS[`${entry.collection}:${entry.id}`] />
-      )}
+      {meta?.name === 'system' && entry.id === 'tamer' && <TamerList />}
+      {meta?.name === 'system' && entry.id === 'novice-challenge' && <NoviceChallenge />}
 
       {
         data.tags?.length > 0 && (
@@ -148,6 +159,10 @@ const base = withBase(`/${entry.collection}/`);
   .head :global(.emoji) { font-size: 4rem; line-height: 1; }
   .head h1 { margin: 0 0 0.4rem; }
   .meta { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .meta :global(.badge.major) {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  }
   .tags { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 1.5rem; }
   .pager {
     display: flex;

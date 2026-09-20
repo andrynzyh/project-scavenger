@@ -3,21 +3,19 @@
  * CATEGORY HUB — the bridge between the homepage and every section.
  *
  * Cards are generated automatically from the navigation registry:
- * curated collections + every auto-discovered src/content/<folder>/.
- * Card metadata (emoji / tag / blurb) lives in src/lib/navigation.ts
- * (SIDEBAR_SECTIONS for curated, HUB_META for auto folders).
+ * every collection listed in src/lib/collections.ts.
+ * Card metadata (emoji / tag / blurb) lives there too.
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import {
-  SIDEBAR_SECTIONS,
-  getAutoSections,
+  getSections,
   buildNavSection,
 } from '../lib/navigation';
 import { withBase } from '../lib/paths';
 import data from '../data/homepage.json';
 
-const allSections = [...SIDEBAR_SECTIONS, ...getAutoSections()];
+const allSections = getSections();
 
 /**
  * Sections to hide from the hub card grid.

@@ -4,6 +4,7 @@ emoji: "⚔️"
 description: "Choose your playstyle — SK DPS, AA DPS, Tank, or Support. Learn the strengths, weaknesses, recommended Digimon, and progression path for each class."
 tags: ["guide", "class", "playstyle", "beginner"]
 order: 1
+category: "Basics"
 ---
 
 Choosing the right class is one of the first important decisions in DMW. Each class has a distinct playstyle, different Digimon requirements, and unique progression paths.
@@ -266,7 +267,7 @@ Choosing the right class is one of the first important decisions in DMW. Each cl
 
 Once you've chosen your class:
 
-1. Follow the [New Player Progression Guide](/guide/new-player/)
+1. Follow the [New Player Progression Guide](/guides/new-player/)
 2. Select the matching Journey Digimon
 3. Build seals for your class priority
 4. Unlock your class deck

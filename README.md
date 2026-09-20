@@ -1,13 +1,14 @@
 # Digimon MMORPG Wiki 🌐
 
-Wiki komunitas **Bahasa Inggris** untuk game MMORPG Digimon: species digimon, evolution, items, dungeon, playstyle, dan progression guide. Dibangun dengan **Astro 5** + Content Collections (Zod).
+Wiki komunitas **Bahasa Inggris** untuk game MMORPG Digimon: species digimon, evolution, items, dungeon, guide, playstyle, dan progression. Dibangun dengan **Astro 5** + Content Collections (Zod).
 
-> 🔓 **Proyek terbuka** — siapa pun boleh berkontribusi artikel dan guide! Baca [CONTRIBUTING.md](./CONTRIBUTING.md) untuk panduan lengkap, dan [GOVERNANCE.md](./GOVERNANCE.md) untuk bagaimana proyek dijaga tetap aman.
+> 🔓 **Proyek terbuka** — siapa pun boleh berkontribusi artikel dan guide lewat pull request!
 
 ## ✨ Fitur
 
-- 📚 **Konten kolaboratif** — artikel & guide dari komunitas dalam Bahasa Inggris
-- 🧬 **Content Collections + Zod** — setiap entri divalidasi otomatis saat build
+- 📚 **Konten komunitas** — artikel & guide dalam Bahasa Inggris
+- 🧬 **Content Collections + Zod** — validasi frontmatter otomatis saat build
+- 🗂️ **Registry tunggal** — `src/lib/collections.ts`: satu tempat untuk daftar koleksi, grouping, dan filter
 - 🔍 **Search client-side** — indeks semua koleksi dibangun saat build (tanpa Pagefind)
 - 🎨 **Dark theme** — tema "Digital World" neon green/blue, mudah di-re-skin via CSS variables
 - 📱 **Responsive** — mobile & desktop
@@ -17,17 +18,16 @@ Wiki komunitas **Bahasa Inggris** untuk game MMORPG Digimon: species digimon, ev
 
 | Koleksi | Lokasi | Schema |
 | --- | --- | --- |
-| Digimon (strict) | `src/content/digimon/` | stage, rank, attribute, role, partner |
-| Accessories (strict) | `src/content/accessories/` | category, owner |
-| Patchnote (strict) | `src/content/patchnote/` | version, date, type |
-| Dungeon | `src/content/dungeon/` | auto (generik) |
-| Guide | `src/content/guide/` | auto (generik) |
-| Items | `src/content/items/` | auto (generik) |
-| Playstyle | `src/content/playstyle/` | auto (generik) |
-| Progression | `src/content/progression/` | auto (generik) |
-| System | `src/content/system/` | auto (generik) |
+| Digimon | `src/content/digimon/` | rank (SSS+/SSS/U), stage, attribute, role, partner |
+| Gear | `src/content/gear/` | category (Goggles/Digivice/Equipment/Cloth), owner |
+| Dungeons | `src/content/dungeons/` | category (Overview/Early Game/Mid Game/Late Game) |
+| Guides | `src/content/guides/` | category (Basics/AA DPS/SK DPS/Tank) |
+| Items | `src/content/items/` | category (opsional) |
+| Progression | `src/content/progression/` | category (opsional) |
+| System | `src/content/system/` | category, owner (opsional) |
+| Patchnote | `src/content/patchnote/` | version, date, type (Major/Hotfix) |
 
-> ✨ **Trik auto-collection**: membuat folder baru di `src/content/` otomatis menjadi koleksi baru tanpa perlu mengubah kode. Lihat `src/content.config.ts`.
+> Semua koleksi **eksplisit** di `src/content.config.ts` + metadata UI di `src/lib/collections.ts` — tanpa auto-scan, sepenuhnya type-safe.
 
 ## 🚀 Menjalankan Lokal
 
@@ -42,21 +42,15 @@ npm run preview    # preview hasil build
 
 > **Penting**: `npm run build` adalah satu-satunya validasi. Jika frontmatter Zod gagal, build error. Pastikan build sukses sebelum membuat pull request.
 
-## 🛡️ Keamanan & Model Kontribusi
+## 🛡️ Keamanan & Deploy
 
-Proyek ini mengikuti model **Pull Request + review**:
-
-1. **Fork** repo ini
-2. Buat **branch** baru untuk perubahan Anda
-3. Buat **pull request** ke branch `main`
-4. **CI otomatis** menjalankan `npm run build` (validasi Zod) di setiap PR
-5. **Maintainer** mereview & merge
-
-Branch `main` dilindungi — tidak ada perubahan langsung ke main. Detail lengkap: [GOVERNANCE.md](./GOVERNANCE.md).
+- **Tidak ada secret/kunci di repo** — konfigurasi sensitif lewat GitHub repository secrets.
+- Deploy otomatis ke GitHub Pages via **GitHub Actions** (`.github/workflows/deploy.yml`) pada push ke `main`.
+- CI (`.github/workflows/ci.yml`) menjalankan build + cek base path di setiap pull request.
 
 ## 📝 Lisensi
 
-- **Konten** (`src/content/`): [CC BY 4.0](./CONTENT_LICENSE.md) — silakan berbagi & adaptasi dengan atribusi
+- **Konten** (`src/content/`): CC BY 4.0 — silakan berbagi & adaptasi dengan atribusi
 - **Kode**: [MIT](./LICENSE)
 
 ## 🙏 Kontributor

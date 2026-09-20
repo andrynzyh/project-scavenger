@@ -1,9 +1,10 @@
-﻿---
+---
 title: "Berserk Arena"
 emoji: "🔥"
 description: "Berserk Arena dual-boss guide — Alter-S and Zwart mechanics, recommended stats, and the full HP% timeline."
 tags: ["dungeon", "mid-game", "berserk", "arena", "boss"]
 order: 2
+category: "Mid Game"
 ---
 
 Berserk Arena is one of the hardest Mid-Game challenges. You fight **two bosses at the same time** — Omegamon **Alter-S** and Omegamon **Zwart** — and they share HP percentage breakpoints. Mis-managing the meter and your team gets wiped.

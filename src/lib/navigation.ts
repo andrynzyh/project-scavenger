@@ -1,122 +1,63 @@
-﻿import fs from 'node:fs';
-
-/**
- * SINGLE SOURCE OF TRUTH for site navigation.
- *
- * - New ITEMS        -> zero edits: drop a .md in any collection folder.
- * - New GROUP VALUE  -> appears automatically; optionally add it to
- *                       groupOrder below for display position.
- * - New CATEGORY     -> just create src/content/<name>/ - it becomes a
- *   FOLDER              collection (see content.config.ts), gets sidebar
- *                       section + pages automatically. Zero edits here.
- * - Curated sections -> tune labels/order in SIDEBAR_SECTIONS below.
- */
-
-/** Folders with hand-tuned schemas/pages in content.config.ts */
-export const CURATED_COLLECTIONS = ['digimon', 'accessories'] as const;
-
 import { resolveIcon } from './icons';
 import { withBase } from './paths';
+import { COLLECTIONS, getCollectionMeta } from './collections';
 
-/** Every OTHER top-level folder under src/content becomes an auto collection */
-export function getAutoCollectionNames(): string[] {
-  const root = './src/content';
-  if (!fs.existsSync(root)) return [];
-  return fs
-    .readdirSync(root, { withFileTypes: true })
-    .filter(
-      (d) =>
-        d.isDirectory() &&
-        !d.name.startsWith('_') &&
-        !(CURATED_COLLECTIONS as readonly string[]).includes(d.name)
-    )
-    .map((d) => d.name);
-}
-
-/** Curated + auto-discovered - every collection on the site */
-export function getAllCollectionNames(): string[] {
-  return [...CURATED_COLLECTIONS, ...getAutoCollectionNames()];
-}
-
-/** Find the registered section for a collection name (curated or auto). */
-export function getSectionByCollection(
-  name: string
-): SidebarSection | undefined {
-  return [...SIDEBAR_SECTIONS, ...getAutoSections()].find(
-    (s) => s.collection === name
-  );
-}
-
-const titleCase = (s: string): string =>
-  s.charAt(0).toUpperCase() + s.slice(1);
+/**
+ * NAVIGATION — dibangun dari registry src/lib/collections.ts.
+ * Tidak ada lagi auto-scan fs: SEMUA koleksi eksplisit, jadi API di sini
+ * tinggal memetakan registry menjadi data sidebar/hub.
+ */
 
 export interface SidebarSection {
-  /** Heading shown in the sidebar */
+  /** Heading yang ditampilkan di sidebar/hub */
   label: string;
-  /** Section landing page ("view all" link) */
+  /** Halaman index koleksi ("view all") */
   href: string;
-  /** Content-collection name defined in src/content.config.ts */
+  /** Nama koleksi (sama dengan folder src/content) */
   collection: string;
-  /** Frontmatter field that groups items (e.g. 'stage', 'category') */
+  /** Field frontmatter untuk pengelompokan (mis. 'rank', 'category') */
   groupField?: string;
-  /** Preferred group display order - unknown values appended alphabetically */
+  /** Urutan tampil grup — nilai tak dikenal menyusul alfabetis */
   groupOrder?: readonly string[];
-  /** Group label used when the field is empty/missing */
+  /** Label grup saat field kosong/tidak ada */
   fallbackGroup?: string;
-  /** Hub card icon (emoji, or an image path under /public) */
+  /** Emoji kartu hub */
   emoji?: string;
-  /** Hub card tag badge, e.g. DIGI / GEAR / DATA */
+  /** Badge kartu hub, mis. DIGI / GEAR */
   tag?: string;
-  /** Hub card one-line description */
+  /** Deskripsi satu baris kartu hub */
   blurb?: string;
 }
 
-/** Hand-curated sections (rich schemas + custom landing pages exist) */
-export const SIDEBAR_SECTIONS: readonly SidebarSection[] = [
-  {
-    label: 'Digimon',
-    emoji: '🐾',
-    tag: 'DIGI',
-    blurb: 'Every Digimon entry — evolution lines, stats, ranks and lore.',
-    href: withBase('/digimon/'),
-    collection: 'digimon',
-    groupField: 'rank',
-    groupOrder: ['SSS+', 'SSS', 'U'],
-    fallbackGroup: 'Unclassified',
-  },
-  {
-    label: 'Gear & Guides',
-    emoji: '🎒',
-    tag: 'GEAR',
-    blurb: 'Goggles, digivices, equipment, clothing and guides.',
-    href: withBase('/accessories/'),
-    collection: 'accessories',
-    groupField: 'category',
-    groupOrder: ['Goggles', 'Digivice', 'Equipment', 'Cloth', 'Guide'],
-    fallbackGroup: 'Other',
-  },
-];
+/** Nama semua koleksi, dari registry. */
+export function getAllCollectionNames(): string[] {
+  return COLLECTIONS.map((c) => c.name);
+}
 
-/** Hub-card metadata overrides for auto-discovered folders (by folder name). */
-export const HUB_META: Record<string, Partial<SidebarSection>> = {
-  dungeon: { emoji: '🗺️', tag: 'DATA', blurb: 'Dungeon maps, spawn areas and boss strategies.' },
-  items: { emoji: '📦', tag: 'DATA', blurb: 'Consumables, materials, drop tables and crafting.' },
-  guide: { emoji: '📖', tag: 'DATA', blurb: 'Community guides, tips and how-to walkthroughs.' },
-  system: { emoji: '⚙️', tag: 'DATA', blurb: 'Game systems, mechanics, rules and patch notes.' },
-  playstyle: { emoji: '⚔️', tag: 'PLAY', blurb: 'Skill DPS, Auto Attack and Tank build guides.' },
-  progression: { emoji: '📈', tag: 'ROAD', blurb: 'New player journey — pre-early to mid-game progression.' },
-};
+/** Mapping registry -> bentuk section yang dipakai UI. */
+function toSection(name: string): SidebarSection {
+  const meta = getCollectionMeta(name)!;
+  return {
+    label: meta.label,
+    href: withBase(`/${meta.name}/`),
+    collection: meta.name,
+    groupField: meta.groupField,
+    groupOrder: meta.groupOrder,
+    fallbackGroup: meta.fallbackGroup,
+    emoji: meta.emoji,
+    tag: meta.tag,
+    blurb: meta.blurb,
+  };
+}
 
-/** Sections generated from auto-discovered folders (src/content/<name>/). */
-export function getAutoSections(): SidebarSection[] {
-  return getAutoCollectionNames().map((name) => ({
-    label: titleCase(name),
-    href: withBase(`/${name}/`),
-    collection: name,
-    groupField: 'category',
-    fallbackGroup: 'All',
-    ...(HUB_META[name] ?? {}),
-  }));
+/** Semua section, urut sesuai registry. */
+export function getSections(): SidebarSection[] {
+  return COLLECTIONS.map((c) => toSection(c.name));
+}
+
+/** Section untuk satu koleksi (undefined jika tak terdaftar). */
+export function getSectionByCollection(name: string): SidebarSection | undefined {
+  return getCollectionMeta(name) ? toSection(name) : undefined;
 }
 
 export interface NavItem {
@@ -127,6 +68,8 @@ export interface NavItem {
   id: string;
   category?: string;
   owner?: string;
+  /** Semua field frontmatter primitif (untuk data-* & filter client-side) */
+  values: Record<string, string>;
   href: string;
 }
 
@@ -138,14 +81,14 @@ export interface NavGroup {
 
 export interface NavSection {
   label: string;
-  /** Content-collection name (used by consumers to build DOM ids) */
+  /** Nama koleksi (dipakai konsumen untuk DOM id) */
   collection: string;
   href: string;
   total: number;
   groups: NavGroup[];
 }
 
-/** Structural entry shape - works for curated AND auto collections */
+/** Bentuk entri generik — berlaku untuk koleksi mana pun */
 interface NavEntry {
   id: string;
   data: {
@@ -157,12 +100,12 @@ interface NavEntry {
   };
 }
 
-/** Turns a flat list of entries into grouped, ordered sidebar data. */
+/** Mengubah daftar entri flat menjadi data sidebar terkelompok & terurut. */
 export function buildNavSection(
   section: SidebarSection,
   entries: readonly NavEntry[]
 ): NavSection {
-  // Sort: alphabetical A–Z by title (case-insensitive, locale-aware)
+  // Urut: alfabetis A–Z berdasarkan title (case-insensitive, locale-aware)
   const sorted = [...entries].sort(
     (a, b) =>
       a.data.title.localeCompare(b.data.title, undefined, { sensitivity: 'base' })
@@ -179,6 +122,11 @@ export function buildNavSection(
         : section.fallbackGroup ?? 'All';
 
     const bucket = byGroup.get(label);
+    // Bawa semua field primitif frontmatter — dipakai untuk data-* filter
+    const values: Record<string, string> = {};
+    for (const [k, v] of Object.entries(entry.data as Record<string, unknown>)) {
+      if (typeof v === 'string' || typeof v === 'number') values[k] = String(v);
+    }
     const item: NavItem = {
       title: entry.data.title,
       emoji: entry.data.emoji ?? '\u{1F4C4}',
@@ -198,13 +146,14 @@ export function buildNavSection(
         typeof (entry.data as Record<string, unknown>).owner === 'string'
           ? ((entry.data as Record<string, unknown>).owner as string)
           : undefined,
+      values,
       href: withBase(`${section.href}${entry.id}/`),
     };
     if (bucket) bucket.push(item);
     else byGroup.set(label, [item]);
   }
 
-  // Preferred order first, unknown groups after (alphabetically)
+  // Urutan preferensi dulu, grup tak dikenal setelahnya (alfabetis)
   const rank = (label: string): number => {
     const i = section.groupOrder?.indexOf(label) ?? -1;
     return i === -1 ? Number.MAX_SAFE_INTEGER : i;

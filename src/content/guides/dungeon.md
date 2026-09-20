@@ -2,7 +2,7 @@
 title: "Dungeon Guide"
 emoji: "🗺️"
 # icon: "icons/dungeon.svg"   # ← optional: image path under /public (icons/, digimon/, accessories/, items/)
-category: "Guide"
+category: "Basics"
 description: "Survival tips for the Digital World's dungeons — floors, traps, rare spawns and boss strategies."
 tags: ["guide", "dungeon", "tips"]
 order: 99
