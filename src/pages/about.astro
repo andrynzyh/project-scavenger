@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Tentang project-scavenger"
+  description="Tentang project-scavenger, wiki komunitas untuk MMORPG Digimon."
+>
+  <div class="wrap prose">
+    <h1>Tentang project-scavenger</h1>
+    <p>
+      project-<strong>62</strong> adalah wiki komunitas untuk MMORPG Digimon.
+      Proyek ini menyajikan referensi terstruktur tentang Digimon, evolution,
+      accessories, items, dungeon, playstyle, progression, dan patchnote.
+    </p>
+
+    <h2>Tujuan proyek</h2>
+    <p>
+      Wiki ini dibuat sebagai pusat referensi yang cepat dicari, mudah dibaca,
+      dan nyaman digunakan untuk membantu pemain memahami dunia serta sistem
+      permainan Digimon MMORPG.
+    </p>
+
+    <h2>Teknologi</h2>
+    <p>
+      project-scavenger dibangun sebagai static site menggunakan
+      <a href="https://astro.build">Astro</a>, Content Collections, Markdown,
+      dan GitHub Pages. Struktur konten divalidasi saat build agar halaman tetap
+      konsisten dan deployment berjalan stabil.
+    </p>
+
+    <h2>Status</h2>
+    <p>
+      Proyek ini terus dikembangkan sebagai wiki komunitas. Data, tampilan,
+      navigasi, dan fitur pencarian dapat berkembang mengikuti kebutuhan
+      pemain serta pembaruan game.
+    </p>
+
+    <blockquote>
+      Digimon™ adalah merek dagang Bandai / Akiyoshi Hongo. project-scavenger adalah
+      proyek penggemar independen, tidak resmi, dan non-komersial.
+    </blockquote>
+  </div>
+</BaseLayout>
+
+<style>
+  .wrap {
+    max-width: 800px;
+    margin-inline: auto;
+    padding: 2.5rem 0 4rem;
+  }
+</style>

@@ -1,0 +1,121 @@
+{
+  "raid": {
+    "eyebrow": "Hourly Schedule",
+    "title": "Spiral Raid Channels",
+    "live": "LIVE",
+    "offlineLabel": "OFFLINE",
+    "channelMinutes": 2,
+    "areas": [
+      {
+        "name": "Forest of Beginning",
+        "startMinute": 0,
+        "eyebrow": "Spiral Area",
+        "emoji": "🌲",
+        "image": "",
+        "channels": [
+          {
+            "label": "CH 0",
+            "status": "done"
+          },
+          {
+            "label": "CH 1",
+            "status": "done"
+          },
+          {
+            "label": "CH 2",
+            "status": "done"
+          }
+        ]
+      },
+      {
+        "name": "Forest of Marionette",
+        "startMinute": 6,
+        "eyebrow": "Spiral Area",
+        "emoji": "🎭",
+        "image": "",
+        "channels": [
+          {
+            "label": "CH 0",
+            "status": "done"
+          },
+          {
+            "label": "CH 1",
+            "status": "done"
+          },
+          {
+            "label": "CH 2",
+            "status": "done"
+          }
+        ]
+      },
+      {
+        "name": "Metal Empire",
+        "startMinute": 12,
+        "eyebrow": "Spiral Area",
+        "emoji": "🏭",
+        "image": "",
+        "channels": [
+          {
+            "label": "CH 0",
+            "status": "done"
+          },
+          {
+            "label": "CH 1",
+            "status": "done"
+          },
+          {
+            "label": "CH 2",
+            "status": "00:45"
+          }
+        ]
+      },
+      {
+        "name": "Top of Nightmare",
+        "startMinute": 18,
+        "eyebrow": "Spiral Area",
+        "emoji": "👹",
+        "image": "",
+        "channels": [
+          {
+            "label": "CH 0",
+            "status": "done"
+          },
+          {
+            "label": "CH 1",
+            "status": "now"
+          },
+          {
+            "label": "CH 2",
+            "status": "02:45"
+          }
+        ]
+      }
+    ]
+  },
+  "notice": "Only SK and AA Digimon receive the 1.3x buff in the current patch. Support and Tank classes are not affected.",
+  "buffs": {
+    "title": "Digimon Buffs Rotation",
+    "multiplier": "1.3x",
+    "description": "These Digimon currently receive the event buff while the rotation is live.",
+    "members": [
+      {
+        "name": "Orochimon",
+        "tag": "AA"
+      },
+      {
+        "name": "Jetmervamon",
+        "tag": "AA"
+      }
+    ]
+  },
+  "patch": {
+    "title": "Last Patch",
+    "description": "",
+    "version": "3.5.1",
+    "date": "September 4, 2026",
+    "summary": "",
+    "detail": "Hotfix — 3.5.1",
+    "emoji": "🛠️",
+    "href": "/patchnote/3-5-1/"
+  }
+}

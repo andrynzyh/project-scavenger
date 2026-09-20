@@ -1,0 +1,1693 @@
+---
+/**
+ * ADMIN CMS — Headless CMS for project-scavenger.
+ *
+ * Flow:
+ * 1. Admin login using the password stored in the GitHub Actions secret
+ * 2. Write/Edit posts (markdown + frontmatter)
+ * 3. Push to GitHub via REST API
+ * 4. GitHub Actions rebuilds site
+ * 5. Post published!
+ *
+ * Security:
+ * - The password is never committed; the workflow hashes it during build.
+ * - The repository credential stays in the browser and is sent directly to GitHub API.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/paths';
+---
+
+<BaseLayout title="Admin CMS — project-scavenger" description="Admin panel for managing wiki content">
+  <!-- Login Screen -->
+  <div id="login-screen" class="admin-screen">
+    <div class="login-card">
+      <h1>🔐 Admin Login</h1>
+      <p>Masukkan password admin untuk mengelola konten wiki.</p>
+      <form id="login-form">
+        <input
+          type="password"
+          id="password-input"
+          placeholder="Password admin"
+          required
+          autocomplete="current-password"
+        />
+        <button type="submit" class="btn solid">Login</button>
+      </form>
+      <p id="login-error" class="error" style="display:none;"></p>
+    </div>
+  </div>
+
+  <!-- Dashboard Screen (hidden until login) -->
+  <div id="dashboard-screen" class="admin-screen" style="display:none;">
+    <div class="admin-header">
+      <h1>📋 CMS Dashboard</h1>
+      <div class="admin-actions">
+        <button id="btn-refresh" class="btn">↻ Refresh</button>
+        <button id="btn-logout" class="btn danger">Logout</button>
+      </div>
+    </div>
+
+    <!-- Token Display -->
+    <div class="token-section">
+      <label>GitHub access credential:</label>
+      <input
+        type="password"
+        id="token-input"
+        autocomplete="off"
+      />
+      <small>Credential tidak ditampilkan dan hanya dikirim langsung ke GitHub API.</small>
+    </div>
+
+    <!-- File Upload -->
+    <div id="file-upload" class="file-upload">
+      <div class="file-upload-head">
+        <h2>Upload File</h2>
+        <small>Upload file ke repository lewat GitHub token yang sama.</small>
+      </div>
+      <div class="upload-form">
+        <label>
+          Target Folder
+          <input
+            type="text"
+            id="file-upload-path"
+            value="public/"
+            placeholder="public/images/"
+          />
+        </label>
+        <label>
+          File
+          <input type="file" id="file-upload-input" />
+        </label>
+        <button id="btn-upload-file" class="btn solid">Upload File to GitHub</button>
+      </div>
+      <div id="file-upload-status" class="status-msg" style="display:none;"></div>
+    </div>
+
+    <!-- Homepage Editor -->
+    <div id="homepage-editor" class="homepage-editor">
+      <div class="editor-card-head">
+        <h2>🏠 Homepage Editor</h2>
+        <button id="btn-load-homepage" class="btn">↻ Load from GitHub</button>
+      </div>
+
+      <details open>
+        <summary><strong>Digimon Buff Rotation</strong></summary>
+        <div class="form-row">
+          <label>
+            Section Title
+            <input type="text" id="hp-buffs-title" />
+          </label>
+          <label>
+            Multiplier
+            <input type="text" id="hp-buffs-multiplier" placeholder="1.3x" />
+          </label>
+        </div>
+        <label>
+          Description
+          <textarea id="hp-buffs-description" rows="2"></textarea>
+        </label>
+        <div id="hp-buffs-list" class="buff-list"></div>
+        <button id="btn-add-buff" class="btn">+ Add Buff Member</button>
+      </details>
+
+      <details open>
+        <summary><strong>Last Patch</strong></summary>
+        <label>
+          Pilih Patch dari Koleksi
+          <select id="hp-patch-select">
+            <option value="">Load patchnote terlebih dahulu</option>
+          </select>
+          <small>Data homepage akan diambil otomatis dari frontmatter koleksi <code>patchnote</code>.</small>
+        </label>
+        <div class="form-row">
+          <label>
+            Title
+            <input type="text" id="hp-patch-title" readonly />
+          </label>
+          <label>
+            Emoji
+            <input type="text" id="hp-patch-emoji" maxlength="2" readonly />
+          </label>
+        </div>
+        <div class="form-row">
+          <label>
+            Version
+            <input type="text" id="hp-patch-version" readonly />
+          </label>
+          <label>
+            Date
+            <input type="text" id="hp-patch-date" readonly />
+          </label>
+        </div>
+        <label>
+          Description
+          <textarea id="hp-patch-description" rows="2" readonly></textarea>
+        </label>
+        <label>
+          Summary
+          <textarea id="hp-patch-summary" rows="2" readonly></textarea>
+        </label>
+        <label>
+          Detail
+          <textarea id="hp-patch-detail" rows="3" readonly></textarea>
+        </label>
+        <label>
+          Link Href
+          <input type="text" id="hp-patch-href" readonly />
+        </label>
+      </details>
+
+      <div class="editor-actions">
+        <button id="btn-save-homepage" class="btn solid">💾 Save Homepage to GitHub</button>
+      </div>
+      <div id="homepage-status" class="status-msg" style="display:none;"></div>
+    </div>
+
+    <!-- File Browser -->
+    <div id="file-browser" class="file-browser">
+      <div class="file-browser-head">
+        <h2>📁 File Browser</h2>
+        <button id="btn-new-post" class="btn solid">+ New Post</button>
+      </div>
+      <div class="folder-select">
+        <label>Koleksi:</label>
+        <select id="collection-select">
+          <option value="digimon">Digimon</option>
+          <option value="guide">Guide</option>
+          <option value="dungeon">Dungeon</option>
+          <option value="items">Items</option>
+          <option value="playstyle">Playstyle</option>
+          <option value="progression">Progression</option>
+          <option value="system">System</option>
+          <option value="accessories">Accessories</option>
+          <option value="patchnote">Patchnote</option>
+        </select>
+        <button id="btn-load-files" class="btn">Load Files</button>
+      </div>
+      <div class="browser-toolbar">
+        <input type="search" id="file-search" placeholder="🔍 Cari file… (ketik untuk filter)" autocomplete="off" />
+        <span id="file-count" class="file-count"></span>
+      </div>
+      <div id="dir-breadcrumb" class="dir-breadcrumb"></div>
+      <div id="file-list" class="file-list"></div>
+    </div>
+
+    <!-- Editor -->
+    <div id="editor-section" class="editor-section" style="display:none;">
+      <h2>✏️ Editor</h2>
+      <div class="editor-meta">
+        <label>
+          File Name:
+          <input type="text" id="edit-filename" placeholder="my-new-post" />
+          <small>.md / .mdx</small>
+        </label>
+        <p id="save-path-hint" class="muted save-hint"></p>
+      </div>
+
+      <!-- Frontmatter Form -->
+      <div class="frontmatter-form">
+        <h3>Frontmatter</h3>
+        <div class="form-row">
+          <label>
+            Title *
+            <input type="text" id="fm-title" required />
+          </label>
+          <label>
+            Emoji
+            <input type="text" id="fm-emoji" placeholder="📄" maxlength="2" />
+          </label>
+        </div>
+        <div class="form-row">
+          <label>
+            Description *
+            <textarea id="fm-description" rows="2" required></textarea>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>
+            Category (auto-collection)
+            <input type="text" id="fm-category" placeholder="guide" />
+          </label>
+          <label>
+            Tags (comma separated)
+            <input type="text" id="fm-tags" placeholder="beginner, guide" />
+          </label>
+          <label>
+            Order
+            <input type="number" id="fm-order" value="99" />
+          </label>
+        </div>
+        <div class="form-row">
+          <label>
+            Icon (image path under /public)
+            <input type="text" id="fm-icon" placeholder="digimon/Agumon.png" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Markdown Editor -->
+      <div class="markdown-editor">
+        <h3>Konten Markdown</h3>
+        <textarea id="edit-content" rows="20" placeholder="Tulis konten markdown di sini..."></textarea>
+      </div>
+
+      <!-- Preview -->
+      <details class="preview-section">
+        <summary>👁️ Preview Markdown</summary>
+        <div id="markdown-preview" class="prose"></div>
+      </details>
+
+      <!-- Actions -->
+      <div class="editor-actions">
+        <button id="btn-save" class="btn solid">💾 Save & Push to GitHub</button>
+        <button id="btn-preview" class="btn">👁️ Preview</button>
+        <button id="btn-back" class="btn">← Back to Dashboard</button>
+      </div>
+      <div id="status-message" class="status-msg" style="display:none;"></div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  // ── Client-side CMS logic ──────────────────────────────────────────
+  // All GitHub API calls happen from the browser using the admin-supplied credential.
+
+  const REPO_OWNER = 'andrynzyh';
+  const REPO_NAME = 'project-scavenger';
+  const BRANCH = 'main';
+  const API_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+
+  // ── Auth ────────────────────────────────────────────────────────────
+  // The workflow hashes the ADMIN_PASSWORD secret at build time.
+  const ADMIN_CREDENTIAL_HASH = import.meta.env.PUBLIC_ADMIN_CREDENTIAL_HASH;
+
+  async function sha256(message: string): Promise<string> {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function isLoggedIn(): boolean {
+    return localStorage.getItem('cms_logged_in') === 'true';
+  }
+
+  function setLoggedIn(val: boolean): void {
+    localStorage.setItem('cms_logged_in', String(val));
+  }
+
+  function getToken(): string {
+    return localStorage.getItem('cms_github_token') ?? '';
+  }
+
+  function setToken(token: string): void {
+    localStorage.setItem('cms_github_token', token);
+  }
+
+  // ── UI References ──────────────────────────────────────────────────
+  const loginScreen = document.getElementById('login-screen')!;
+  const dashboardScreen = document.getElementById('dashboard-screen')!;
+  const loginForm = document.getElementById('login-form') as HTMLFormElement;
+  const passwordInput = document.getElementById('password-input') as HTMLInputElement;
+  const loginError = document.getElementById('login-error')!;
+  const tokenInput = document.getElementById('token-input') as HTMLInputElement;
+  const fileList = document.getElementById('file-list')!;
+  const fileUploadInput = document.getElementById('file-upload-input') as HTMLInputElement;
+  const fileUploadPath = document.getElementById('file-upload-path') as HTMLInputElement;
+  const fileUploadStatus = document.getElementById('file-upload-status')!;
+  const editorSection = document.getElementById('editor-section')!;
+  const statusMessage = document.getElementById('status-message')!;
+  const editFilename = document.getElementById('edit-filename') as HTMLInputElement;
+  const editContent = document.getElementById('edit-content') as HTMLTextAreaElement;
+  const collectionSelect = document.getElementById('collection-select') as HTMLSelectElement;
+  const markdownPreview = document.getElementById('markdown-preview')!;
+
+  // ── Login ──────────────────────────────────────────────────────────
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!ADMIN_CREDENTIAL_HASH) {
+      loginError.textContent = 'Konfigurasi login belum tersedia.';
+      loginError.style.display = 'block';
+      return;
+    }
+    const hash = await sha256(passwordInput.value);
+    if (hash === ADMIN_CREDENTIAL_HASH) {
+      setLoggedIn(true);
+      showDashboard();
+    } else {
+      loginError.textContent = 'Password salah!';
+      loginError.style.display = 'block';
+    }
+  });
+
+  // ── Show Dashboard ─────────────────────────────────────────────────
+  function showDashboard(): void {
+    loginScreen.style.display = 'none';
+    dashboardScreen.style.display = 'block';
+    tokenInput.value = getToken();
+    loadFiles();
+  }
+
+  // ── Logout ─────────────────────────────────────────────────────────
+  document.getElementById('btn-logout')!.addEventListener('click', () => {
+    setLoggedIn(false);
+    loginScreen.style.display = 'block';
+    dashboardScreen.style.display = 'none';
+  });
+
+  // ── Token ──────────────────────────────────────────────────────────
+  tokenInput.addEventListener('change', () => {
+    setToken(tokenInput.value.trim());
+  });
+
+  // ── File Upload ────────────────────────────────────────────────────
+  function normalizeUploadPath(path: string, fileName: string): string {
+    const folder = path.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+    return [folder, fileName.replace(/\\/g, '/')].filter(Boolean).join('/');
+  }
+
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result);
+        resolve(result.split(',')[1] ?? result);
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function showFileUploadStatus(msg: string, type: 'info' | 'success' | 'error'): void {
+    fileUploadStatus.textContent = msg;
+    fileUploadStatus.className = `status-msg ${type}`;
+    fileUploadStatus.style.display = 'block';
+  }
+
+  document.getElementById('btn-upload-file')!.addEventListener('click', async () => {
+    const file = fileUploadInput.files?.[0];
+    if (!file) {
+      showFileUploadStatus('Pilih file yang ingin di-upload.', 'error');
+      return;
+    }
+
+    const targetPath = normalizeUploadPath(fileUploadPath.value, file.name);
+    if (!targetPath || targetPath.split('/').includes('..')) {
+      showFileUploadStatus('Target folder tidak valid.', 'error');
+      return;
+    }
+
+    try {
+      showFileUploadStatus(`Meng-upload ${file.name} ke ${targetPath}...`, 'info');
+
+      let sha: string | undefined;
+      try {
+        const existing = await ghFetch(`/contents/${targetPath}`);
+        sha = existing.sha;
+      } catch {
+        // File belum ada — buat file baru.
+      }
+
+      const body: any = {
+        message: `cms: upload ${targetPath}`,
+        content: await fileToBase64(file),
+        branch: BRANCH,
+      };
+      if (sha) body.sha = sha;
+
+      await ghFetch(`/contents/${targetPath}`, {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      });
+
+      showFileUploadStatus(`✅ ${file.name} berhasil di-upload ke ${targetPath}.`, 'success');
+      fileUploadInput.value = '';
+    } catch (err: any) {
+      showFileUploadStatus(`❌ Gagal upload: ${err.message}`, 'error');
+    }
+  });
+
+  // ── GitHub API Helpers ─────────────────────────────────────────────
+  async function ghFetch(path: string, options: RequestInit = {}): Promise<any> {
+    const token = getToken();
+    if (!token) {
+      throw new Error('GitHub credential belum diisi!');
+    }
+    const url = `${API_BASE}${path}`;
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(`GitHub API error ${res.status}: ${err.message ?? res.statusText}`);
+    }
+    return res.json();
+  }
+
+  // ── Load Files (mendukung subfolder) ───────────────────────────────
+  // currentDir = '' (root koleksi) atau relatif seperti 'sss' / 'Late-Game'.
+  let currentDir = '';
+  let currentExtension = '.md';
+
+  function dirPath(): string {
+    const base = `/src/content/${collectionSelect.value}`;
+    return currentDir ? `${base}/${currentDir}` : base;
+  }
+
+  function joinDir(dir: string, name: string): string {
+    return dir ? `${dir}/${name}` : name;
+  }
+
+  function renderBreadcrumb(): void {
+    const bc = document.getElementById('dir-breadcrumb');
+    if (!bc) return;
+    const parts = currentDir ? currentDir.split('/') : [];
+    let html = `<button class="btn btn-sm" data-action="open" data-dir=""${parts.length ? '' : ' disabled'}>🏠 ${collectionSelect.value}/</button>`;
+    let acc = '';
+    parts.forEach((p, i) => {
+      acc = acc ? `${acc}/${p}` : p;
+      const isLast = i === parts.length - 1;
+      html += ` <span class="bc-sep">/</span> ${
+        isLast
+          ? `<span class="bc-current">${p}/</span>`
+          : `<button class="btn btn-sm" data-action="open" data-dir="${acc}">${p}</button>`
+      }`;
+    });
+    bc.innerHTML = html;
+  }
+
+  function updateSaveHint(): void {
+    const hint = document.getElementById('save-path-hint');
+    if (!hint) return;
+    const subDir = currentDir ? `${currentDir}/` : '';
+    hint.textContent = `Disimpan ke: src/content/${collectionSelect.value}/${subDir}<nama-file>${currentExtension}`;
+  }
+
+  // State daftar file saat ini (untuk filter client-side)
+  let currentRows: HTMLElement[] = [];
+
+  function renderRows(): void {
+    const searchEl = document.getElementById('file-search') as HTMLInputElement;
+    const q = (searchEl?.value ?? '').trim().toLowerCase();
+    const filtered = q
+      ? currentRows.filter((r) => r.textContent?.toLowerCase().includes(q))
+      : currentRows;
+    const countEl = document.getElementById('file-count');
+    if (countEl) countEl.textContent = `${filtered.length} dari ${currentRows.length}`;
+    fileList.innerHTML = '';
+    filtered.forEach((r) => fileList.appendChild(r));
+  }
+
+  async function loadFiles(): Promise<void> {
+    fileList.innerHTML = '<p class="muted">Loading...</p>';
+    renderBreadcrumb();
+    const searchEl = document.getElementById('file-search') as HTMLInputElement;
+    if (searchEl) searchEl.value = '';
+    try {
+      const items = await ghFetch(`/contents${dirPath()}`);
+      const dirs = items
+        .filter((f: any) => f.type === 'dir')
+        .sort((a: any, b: any) => a.name.localeCompare(b.name));
+      const contentFiles = items
+        .filter((f: any) => f.type === 'file' && /\.(md|mdx)$/.test(f.name))
+        .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+      currentRows = [];
+      if (dirs.length === 0 && contentFiles.length === 0) {
+        fileList.innerHTML = '<p class="muted">Tidak ada file di folder ini.</p>';
+        const countEl = document.getElementById('file-count');
+        if (countEl) countEl.textContent = '0';
+        return;
+      }
+      // Subfolder dulu — klik baris ATAU tombol Buka
+      for (const dir of dirs) {
+        const row = document.createElement('div');
+        row.className = 'file-row dir-row clickable';
+        row.dataset.action = 'open';
+        row.dataset.dir = joinDir(currentDir, dir.name);
+        row.innerHTML = `
+          <span class="file-name">📁 ${dir.name}/</span>
+          <div class="file-actions">
+            <button class="btn btn-sm" data-action="open" data-dir="${joinDir(currentDir, dir.name)}">Buka</button>
+          </div>
+        `;
+        currentRows.push(row);
+      }
+      // Content files
+      for (const file of contentFiles) {
+        const row = document.createElement('div');
+        row.className = 'file-row clickable';
+        row.dataset.action = 'edit';
+        row.dataset.path = file.path;
+        row.dataset.sha = file.sha;
+        row.innerHTML = `
+          <span class="file-name">📄 ${file.name}</span>
+          <div class="file-actions">
+            <button class="btn btn-sm" data-action="edit" data-path="${file.path}" data-sha="${file.sha}">Edit</button>
+            <button class="btn btn-sm danger" data-action="delete" data-path="${file.path}" data-sha="${file.sha}">Delete</button>
+          </div>
+        `;
+        currentRows.push(row);
+      }
+      renderRows();
+    } catch (err: any) {
+      fileList.innerHTML = `<p class="error">Gagal load files: ${err.message}</p>`;
+    }
+  }
+
+  document.getElementById('btn-load-files')!.addEventListener('click', loadFiles);
+  document.getElementById('btn-refresh')!.addEventListener('click', loadFiles);
+  // Satu listener saja untuk seluruh aksi file/folder (delegation)
+  fileList.addEventListener('click', handleFileAction);
+  // Breadcrumb juga clickable (kembali ke folder induk / root)
+  document.getElementById('dir-breadcrumb')?.addEventListener('click', handleFileAction);
+  // Live filter tanpa klik tombol
+  const searchInput = document.getElementById('file-search') as HTMLInputElement;
+  searchInput?.addEventListener('input', renderRows);
+
+  // ── File Actions ───────────────────────────────────────────────────
+  async function handleFileAction(e: Event): Promise<void> {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('.btn[data-action]')
+      ?? (e.target as HTMLElement).closest<HTMLElement>('.file-row.clickable');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    if (!action) return;
+    const path = btn.dataset.path;
+    const sha = btn.dataset.sha;
+
+    if (action === 'open') {
+      currentDir = btn.dataset.dir ?? '';
+      loadFiles();
+    } else if (action === 'edit') {
+      if (!path) return;
+      await openEditor(path, sha!);
+    } else if (action === 'delete') {
+      if (!path || !sha) return;
+      if (!confirm(`Yakin ingin menghapus ${path}?`)) return;
+      await deleteFile(path, sha);
+    }
+  }
+
+  // ── Open Editor ────────────────────────────────────────────────────
+  async function openEditor(path: string, sha: string): Promise<void> {
+    editorSection.style.display = 'block';
+    editorSection.dataset.currentPath = path;
+    editorSection.dataset.currentSha = sha;
+    document.getElementById('editor-section')!.scrollIntoView({ behavior: 'smooth' });
+
+    try {
+      // Fetch file content
+      const file = await ghFetch(`/contents/${path}`);
+      const content = decodeGitHubContent(file.content);
+
+      // Parse frontmatter — strip it from the markdown body so we don't
+      // end up with a duplicate frontmatter block on save.
+      const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
+      editContent.value = fmMatch ? content.slice(fmMatch[0].length) : content;
+
+      if (fmMatch) {
+        const fm = fmMatch[1];
+        setFrontmatterField('title', fm, 'title');
+        setFrontmatterField('emoji', fm, 'emoji');
+        setFrontmatterField('description', fm, 'description');
+        setFrontmatterField('category', fm, 'category');
+        setFrontmatterField('tags', fm, 'tags');
+        setFrontmatterField('order', fm, 'order');
+        setFrontmatterField('icon', fm, 'icon');
+      }
+
+      // Set filename from path
+      const parts = path.split('/');
+      const fileName = parts[parts.length - 1];
+      editFilename.value = fileName;
+      currentExtension = fileName.endsWith('.mdx') ? '.mdx' : '.md';
+      collectionSelect.value = parts[2]; // src/content/{collection}
+      currentDir = parts.slice(3, -1).join('/'); // subfolder di dalam koleksi
+      updateSaveHint();
+
+      showStatus('File loaded — edit di bawah, lalu Save.', 'info');
+    } catch (err: any) {
+      showStatus(`Gagal load file: ${err.message}`, 'error');
+    }
+  }
+
+  function setFrontmatterField(fieldId: string, fmText: string, yamlKey: string): void {
+    const el = document.getElementById(`fm-${fieldId}`) as HTMLInputElement | HTMLTextAreaElement;
+    if (!el) return;
+    // Match quoted value (may span newlines) OR unquoted single-line value.
+    const regex = new RegExp(`^${yamlKey}:\\s*"([\\s\\S]*?)"\\s*$|^${yamlKey}:\\s*(.+)\\s*$`, 'm');
+    const match = fmText.match(regex);
+    if (match) {
+      let val = (match[1] ?? match[2] ?? '').trim();
+      // Remove surrounding quotes (already stripped by capture groups, but be safe)
+      val = val.replace(/^["']|["']$/g, '');
+      // Handle arrays like ["tag1", "tag2"]
+      if (val.startsWith('[')) {
+        val = val.replace(/[\[\]"]/g, '').trim();
+      }
+      el.value = val;
+    }
+  }
+
+  // ── Save / Create / Update ─────────────────────────────────────────
+  document.getElementById('btn-save')!.addEventListener('click', async () => {
+    const collection = collectionSelect.value;
+    const filenameInput = editFilename.value.trim();
+    const extension = filenameInput.endsWith('.mdx')
+      ? '.mdx'
+      : filenameInput.endsWith('.md')
+        ? '.md'
+        : currentExtension;
+    const filename = filenameInput.replace(/\.(md|mdx)$/, '');
+    if (!filename) {
+      showStatus('Filename wajib diisi!', 'error');
+      return;
+    }
+
+    // Build frontmatter
+    const emojiRaw = (document.getElementById('fm-emoji') as HTMLInputElement).value.trim();
+    // Emoji must be a single codepoint — reject multi-byte / broken pastes.
+    const emoji = [...emojiRaw].length <= 2 ? emojiRaw : '📄';
+
+    const frontmatter: Record<string, any> = {
+      title: (document.getElementById('fm-title') as HTMLInputElement).value.trim(),
+      emoji,
+      description: (document.getElementById('fm-description') as HTMLTextAreaElement).value.trim(),
+      category: (document.getElementById('fm-category') as HTMLInputElement).value.trim(),
+      tags: (document.getElementById('fm-tags') as HTMLInputElement).value.trim()
+        .split(',').map(t => t.trim()).filter(Boolean),
+      order: parseInt((document.getElementById('fm-order') as HTMLInputElement).value) || 99,
+      icon: (document.getElementById('fm-icon') as HTMLInputElement).value.trim(),
+    };
+
+    // Remove empty fields
+    const fmEntries = Object.entries(frontmatter).filter(([_, v]) => {
+      if (Array.isArray(v)) return v.length > 0;
+      return v !== '' && v !== undefined && v !== null;
+    });
+
+    let fmYaml = fmEntries.map(([k, v]) => {
+      if (Array.isArray(v)) return `${k}: [${v.map(t => `"${t}"`).join(', ')}]`;
+      if (typeof v === 'number') return `${k}: ${v}`;
+      return `${k}: "${v}"`;
+    }).join('\n');
+
+    const fullContent = `---\n${fmYaml}\n---\n\n${editContent.value}`;
+
+    // Determine file path (menghormati subfolder yang sedang dibuka)
+    const subDir = currentDir ? `${currentDir}/` : '';
+    const filePath = `src/content/${collection}/${subDir}${filename}${extension}`;
+    const existingSha = editorSection.dataset.currentSha || undefined;
+
+    try {
+      showStatus('Menyimpan ke GitHub...', 'info');
+
+      // Check if file exists
+      let sha = existingSha;
+      if (!sha) {
+        try {
+          const existing = await ghFetch(`/contents/${filePath}`);
+          sha = existing.sha;
+        } catch {
+          // File doesn't exist yet — that's fine
+        }
+      }
+
+      const body: any = {
+        message: `cms: ${sha ? 'update' : 'create'} ${filePath}`,
+        content: btoa(unescape(encodeURIComponent(fullContent))),
+        branch: BRANCH,
+      };
+      if (sha) body.sha = sha;
+
+      await ghFetch(`/contents/${filePath}`, {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      });
+
+      showStatus(`✅ Berhasil! File ${filePath} sudah di-push ke GitHub. Site akan auto-rebuild.`, 'success');
+      editorSection.dataset.currentSha = sha ?? '';
+      updateSaveHint();
+    } catch (err: any) {
+      showStatus(`❌ Gagal push: ${err.message}`, 'error');
+    }
+  });
+
+  // ── Delete ─────────────────────────────────────────────────────────
+  async function deleteFile(path: string, sha: string): Promise<void> {
+    try {
+      showStatus(`Menghapus ${path}...`, 'info');
+      await ghFetch(`/contents/${path}`, {
+        method: 'DELETE',
+        body: JSON.stringify({
+          message: `cms: delete ${path}`,
+          sha,
+          branch: BRANCH,
+        }),
+      });
+      showStatus(`✅ ${path} berhasil dihapus.`, 'success');
+      loadFiles();
+    } catch (err: any) {
+      showStatus(`❌ Gagal hapus: ${err.message}`, 'error');
+    }
+  }
+
+  // ── New Post ───────────────────────────────────────────────────────
+  document.getElementById('btn-new-post')!.addEventListener('click', () => {
+    editorSection.style.display = 'block';
+    editorSection.dataset.currentPath = '';
+    editorSection.dataset.currentSha = '';
+    editFilename.value = '';
+    editContent.value = '';
+    (document.getElementById('fm-title') as HTMLInputElement).value = '';
+    (document.getElementById('fm-emoji') as HTMLInputElement).value = '📄';
+    (document.getElementById('fm-description') as HTMLTextAreaElement).value = '';
+    (document.getElementById('fm-category') as HTMLInputElement).value = '';
+    (document.getElementById('fm-tags') as HTMLInputElement).value = '';
+    (document.getElementById('fm-order') as HTMLInputElement).value = '99';
+    (document.getElementById('fm-icon') as HTMLInputElement).value = '';
+    // New posts always go to the root of the selected collection, not a subfolder.
+    currentDir = '';
+    currentExtension = '.md';
+    renderBreadcrumb();
+    updateSaveHint();
+    document.getElementById('editor-section')!.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  // ── Back ───────────────────────────────────────────────────────────
+  document.getElementById('btn-back')!.addEventListener('click', () => {
+    editorSection.style.display = 'none';
+  });
+
+  // ── Preview ────────────────────────────────────────────────────────
+  document.getElementById('btn-preview')!.addEventListener('click', () => {
+    const md = editContent.value;
+    // Simple markdown to HTML (basic)
+    let html = md
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/\n{2,}/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+    html = '<p>' + html + '</p>';
+    markdownPreview.innerHTML = html;
+  });
+
+  // ── Status Message ─────────────────────────────────────────────────
+  function showStatus(msg: string, type: 'info' | 'success' | 'error'): void {
+    statusMessage.textContent = msg;
+    statusMessage.className = `status-msg ${type}`;
+    statusMessage.style.display = 'block';
+  }
+
+  // ── Homepage Editor ────────────────────────────────────────────────
+  const HOMEPAGE_PATH = 'src/data/homepage.json';
+  let homepageSha: string | undefined;
+
+  interface BuffMember {
+    name: string;
+    tag: string;
+  }
+
+  interface PatchnoteEntry {
+    slug: string;
+    title: string;
+    emoji: string;
+    version: string;
+    date: string;
+    description: string;
+    type: string;
+    href: string;
+  }
+
+  function getHpEl(id: string): HTMLInputElement | HTMLTextAreaElement {
+    return document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement;
+  }
+
+  function showHomepageStatus(msg: string, type: 'info' | 'success' | 'error'): void {
+    const el = document.getElementById('homepage-status')!;
+    el.textContent = msg;
+    el.className = `status-msg ${type}`;
+    el.style.display = 'block';
+  }
+
+  function renderBuffList(members: BuffMember[]): void {
+    const container = document.getElementById('hp-buffs-list')!;
+    container.innerHTML = '';
+    members.forEach((m, i) => {
+      const row = document.createElement('div');
+      row.className = 'form-row buff-row';
+      row.innerHTML = `
+        <label>
+          Name
+          <input type="text" data-buff-index="${i}" data-buff-field="name" value="${escapeHtml(m.name)}" />
+        </label>
+        <label>
+          Tag
+          <input type="text" data-buff-index="${i}" data-buff-field="tag" value="${escapeHtml(m.tag)}" />
+        </label>
+        <button class="btn danger btn-remove-buff" data-buff-index="${i}">✕</button>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function escapeHtml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function readBuffMembers(): BuffMember[] {
+    const rows = document.querySelectorAll('#hp-buffs-list .buff-row');
+    const members: BuffMember[] = [];
+    rows.forEach((row) => {
+      const name = (row.querySelector('[data-buff-field="name"]') as HTMLInputElement)?.value.trim() ?? '';
+      const tag = (row.querySelector('[data-buff-field="tag"]') as HTMLInputElement)?.value.trim() ?? '-';
+      members.push({ name: name || '-', tag: tag || '-' });
+    });
+    return members;
+  }
+
+  // Homepage data terakhir yang di-load (untuk merge saat save)
+  let homepageData: any = null;
+  let patchnoteEntries: PatchnoteEntry[] = [];
+
+  function decodeGitHubContent(content: string): string {
+    return decodeURIComponent(escape(atob(content))).replace(/^\uFEFF/, '');
+  }
+
+  function parseFrontmatterValue(frontmatter: string, key: string): string {
+    const match = frontmatter.match(new RegExp(`^${key}:\\s*(?:"([^"]*)"|'([^']*)'|(.+))\\s*$`, 'm'));
+    return (match?.[1] ?? match?.[2] ?? match?.[3] ?? '').trim();
+  }
+
+  function formatPatchDate(value: string): string {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  }
+
+  function applyPatchnoteToForm(patch: PatchnoteEntry): void {
+    getHpEl('hp-patch-title').value = 'Last Patch';
+    getHpEl('hp-patch-emoji').value = patch.emoji;
+    getHpEl('hp-patch-version').value = patch.version;
+    getHpEl('hp-patch-date').value = patch.date;
+    getHpEl('hp-patch-description').value = patch.description;
+    getHpEl('hp-patch-summary').value = patch.description;
+    getHpEl('hp-patch-detail').value = `${patch.type} — ${patch.version}`;
+    getHpEl('hp-patch-href').value = patch.href;
+  }
+
+  async function loadPatchnoteOptions(selectedHref = '', selectedVersion = ''): Promise<void> {
+    const select = document.getElementById('hp-patch-select') as HTMLSelectElement;
+    select.innerHTML = '<option value="">Loading patchnotes...</option>';
+
+    const entries = await ghFetch('/contents/src/content/patchnote');
+    const contentFiles = entries.filter((entry: { name: string; type: string }) =>
+      entry.type === 'file' && /\.(md|mdx)$/.test(entry.name)
+    );
+
+    patchnoteEntries = await Promise.all(contentFiles.map(async (entry: { name: string; path: string }) => {
+      const file = await ghFetch(`/contents/${entry.path}`);
+      const content = decodeGitHubContent(file.content);
+      const frontmatter = content.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? '';
+      const slug = entry.name.replace(/\.(md|mdx)$/, '');
+      const date = parseFrontmatterValue(frontmatter, 'date');
+      return {
+        slug,
+        title: parseFrontmatterValue(frontmatter, 'title') || slug,
+        emoji: parseFrontmatterValue(frontmatter, 'emoji') || '📝',
+        version: parseFrontmatterValue(frontmatter, 'version'),
+        date: formatPatchDate(date),
+        description: parseFrontmatterValue(frontmatter, 'description'),
+        type: parseFrontmatterValue(frontmatter, 'type') || 'Hotfix',
+        href: `/patchnote/${slug}/`,
+        sortDate: date,
+      };
+    })).then((items) => items.sort((a, b) =>
+      new Date(b.sortDate).getTime() - new Date(a.sortDate).getTime()
+    ).map(({ sortDate: _sortDate, ...item }) => item));
+
+    select.innerHTML = '<option value="">Pilih patchnote...</option>';
+    patchnoteEntries.forEach((patch) => {
+      const option = document.createElement('option');
+      option.value = patch.slug;
+      option.textContent = `${patch.version || patch.title} — ${patch.title}`;
+      select.appendChild(option);
+    });
+
+    const selectedSlug = selectedHref.match(/\/patchnote\/([^/]+)\/?$/)?.[1] ?? '';
+    const normalizedVersion = selectedVersion.replace(/^Patch\s+/i, '').trim();
+    const selected = patchnoteEntries.find((patch) =>
+      patch.slug === selectedSlug ||
+      (normalizedVersion && patch.version === normalizedVersion)
+    );
+    if (selected) {
+      select.value = selected.slug;
+      applyPatchnoteToForm(selected);
+    }
+  }
+
+  async function loadHomepage(): Promise<void> {
+    showHomepageStatus('Loading homepage.json...', 'info');
+    try {
+      const file = await ghFetch(`/contents/${HOMEPAGE_PATH}`);
+      homepageSha = file.sha;
+      const content = decodeGitHubContent(file.content);
+      const data = JSON.parse(content);
+      homepageData = data;
+
+      getHpEl('hp-buffs-title').value = data.buffs?.title ?? '';
+      getHpEl('hp-buffs-multiplier').value = data.buffs?.multiplier ?? '';
+      getHpEl('hp-buffs-description').value = data.buffs?.description ?? '';
+      renderBuffList(data.buffs?.members ?? []);
+
+      getHpEl('hp-patch-title').value = data.patch?.title ?? '';
+      getHpEl('hp-patch-emoji').value = data.patch?.emoji ?? '';
+      getHpEl('hp-patch-version').value = data.patch?.version ?? '';
+      getHpEl('hp-patch-date').value = data.patch?.date ?? '';
+      getHpEl('hp-patch-description').value = data.patch?.description ?? '';
+      getHpEl('hp-patch-summary').value = data.patch?.summary ?? '';
+      getHpEl('hp-patch-detail').value = data.patch?.detail ?? '';
+      getHpEl('hp-patch-href').value = data.patch?.href ?? '/patchnote/';
+      await loadPatchnoteOptions(data.patch?.href ?? '', data.patch?.version ?? '');
+
+      showHomepageStatus('✅ Homepage loaded.', 'success');
+    } catch (err: any) {
+      showHomepageStatus(`❌ Gagal load: ${err.message}`, 'error');
+    }
+  }
+
+  async function saveHomepage(): Promise<void> {
+    const emojiRaw = (getHpEl('hp-patch-emoji') as HTMLInputElement).value.trim();
+    const emoji = [...emojiRaw].length <= 2 ? emojiRaw : '🛠️';
+
+    // Merge dengan data yang sudah ada — hanya timpa buffs & patch.
+    const newData = {
+      ...(homepageData ?? {}),
+      buffs: {
+        title: getHpEl('hp-buffs-title').value.trim(),
+        multiplier: getHpEl('hp-buffs-multiplier').value.trim(),
+        description: getHpEl('hp-buffs-description').value.trim(),
+        members: readBuffMembers(),
+      },
+      patch: {
+        title: getHpEl('hp-patch-title').value.trim(),
+        description: getHpEl('hp-patch-description').value.trim(),
+        version: getHpEl('hp-patch-version').value.trim(),
+        date: getHpEl('hp-patch-date').value.trim(),
+        summary: getHpEl('hp-patch-summary').value.trim(),
+        detail: getHpEl('hp-patch-detail').value.trim(),
+        emoji,
+        href: getHpEl('hp-patch-href').value.trim() || '/patchnote/',
+      },
+    };
+
+    const json = JSON.stringify(newData, null, 2);
+
+    try {
+      showHomepageStatus('Menyimpan homepage.json ke GitHub...', 'info');
+      const body: any = {
+        message: 'cms: update homepage buff rotation and last patch',
+        content: btoa(unescape(encodeURIComponent(json))),
+        branch: BRANCH,
+      };
+      if (homepageSha) body.sha = homepageSha;
+
+      const result = await ghFetch(`/contents/${HOMEPAGE_PATH}`, {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      });
+      homepageSha = result.content.sha;
+      showHomepageStatus('✅ Homepage berhasil di-push ke GitHub. Site akan auto-rebuild.', 'success');
+    } catch (err: any) {
+      showHomepageStatus(`❌ Gagal push: ${err.message}`, 'error');
+    }
+  }
+
+  document.getElementById('btn-load-homepage')?.addEventListener('click', loadHomepage);
+  document.getElementById('btn-save-homepage')?.addEventListener('click', saveHomepage);
+  document.getElementById('hp-patch-select')?.addEventListener('change', (event) => {
+    const slug = (event.target as HTMLSelectElement).value;
+    const selected = patchnoteEntries.find((patch) => patch.slug === slug);
+    if (selected) applyPatchnoteToForm(selected);
+  });
+  document.getElementById('btn-add-buff')?.addEventListener('click', () => {
+    const members = readBuffMembers();
+    members.push({ name: '', tag: '' });
+    renderBuffList(members);
+  });
+  document.getElementById('hp-buffs-list')?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('.btn-remove-buff');
+    if (!btn) return;
+    const idx = Number((btn as HTMLElement).dataset.buffIndex);
+    const members = readBuffMembers();
+    members.splice(idx, 1);
+    renderBuffList(members);
+  });
+
+  // ── Init ───────────────────────────────────────────────────────────
+  if (isLoggedIn()) {
+    showDashboard();
+  } else {
+    loginScreen.style.display = 'block';
+    dashboardScreen.style.display = 'none';
+  }
+</script>
+
+<style>
+  .admin-screen {
+    max-width: 960px;
+    margin: 2rem auto;
+  }
+
+  /* ---- Login ---- */
+  .login-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2.5rem;
+    max-width: 400px;
+    margin: 4rem auto;
+    text-align: center;
+  }
+  .login-card h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+  .login-card p {
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+  .login-card input {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    font-size: 1rem;
+    font-family: var(--font-mono);
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+  }
+  .login-card input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(41, 241, 156, 0.15);
+  }
+  .login-card .btn {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+  }
+
+  /* ---- Dashboard ---- */
+  .admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .admin-header h1 {
+    font-size: 1.6rem;
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+  .admin-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .token-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .token-section label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .token-section input {
+    width: 100%;
+    padding: 0.55rem 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .token-section input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .token-section small {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .token-section code {
+    background: var(--panel-2);
+    border-color: var(--border);
+  }
+
+  /* ---- File Upload ---- */
+  .file-upload {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .file-upload-head h2 {
+    margin: 0 0 0.25rem;
+    border: none;
+    padding: 0;
+    font-size: 1.3rem;
+  }
+
+  .file-upload-head small {
+    color: var(--muted);
+  }
+
+  .upload-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    align-items: end;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .upload-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .upload-form input[type='text'] {
+    width: 100%;
+    padding: 0.55rem 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .upload-form input[type='file'] {
+    min-height: 42px;
+    padding: 0.5rem;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  /* ---- Homepage Editor ---- */
+  .homepage-editor {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .editor-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .editor-card-head h2 {
+    font-size: 1.3rem;
+    margin: 0;
+  }
+  .homepage-editor details {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .homepage-editor summary {
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+  }
+  .homepage-editor label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+    flex: 1;
+  }
+  .homepage-editor label input,
+  .homepage-editor label textarea,
+  .homepage-editor label select {
+    width: 100%;
+    margin-top: 0.3rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.7rem;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .homepage-editor label input[readonly],
+  .homepage-editor label textarea[readonly] {
+    opacity: 0.8;
+    cursor: not-allowed;
+  }
+  .homepage-editor label input:focus,
+  .homepage-editor label textarea:focus,
+  .homepage-editor label select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .buff-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .buff-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+  }
+  .buff-row .btn-remove-buff {
+    flex: 0 0 auto;
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* ---- File Browser ---- */
+  .file-browser {
+    position: relative;
+    padding: 1.25rem;
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--accent-2) 6%, transparent), transparent 38%),
+      var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+  }
+  .file-browser-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+  }
+  .file-browser h2 {
+    font-size: 1.3rem;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .folder-select {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .folder-select label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .folder-select select {
+    padding: 0.5rem 0.7rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  /* Toolbar: search + count */
+  .browser-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .browser-toolbar input[type='search'] {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.5rem 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .browser-toolbar input[type='search']:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .file-count {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  :global(.file-list) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    gap: 0.65rem;
+    align-items: stretch;
+  }
+  :global(.file-row) {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    min-height: 92px;
+    background: color-mix(in srgb, var(--panel-2) 68%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.8rem;
+    gap: 0.7rem;
+  }
+  :global(.file-row.clickable) {
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  }
+  :global(.file-row.clickable:hover) {
+    border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+    background: color-mix(in srgb, var(--accent) 7%, var(--panel-2));
+    transform: translateY(-1px);
+  }
+  :global(.file-name) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text);
+  }
+  :global(.file-row:not(.dir-row)::before) {
+    content: 'MARKDOWN';
+    display: block;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+  }
+  :global(.dir-row) {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 65%),
+      color-mix(in srgb, var(--panel-2) 80%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  }
+  :global(.dir-row::before) {
+    content: 'FOLDER';
+    display: block;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+  }
+  :global(.file-actions) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    margin-top: auto;
+  }
+  :global(.file-actions .btn) {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.72rem;
+  }
+  .dir-breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.65rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+  }
+  .bc-sep {
+    opacity: 0.6;
+  }
+  .bc-current {
+    color: var(--accent);
+  }
+  :global(.dir-row .file-name) {
+    color: var(--accent);
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+  :global(.file-list > .muted),
+  :global(.file-list > .error) {
+    grid-column: 1 / -1;
+    margin: 0.5rem 0;
+  }
+  .save-hint {
+    margin-top: 0.35rem;
+    font-size: 0.82rem;
+    opacity: 0.8;
+  }
+  .btn-sm {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.65rem;
+  }
+  .btn.danger {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+  .btn.danger:hover {
+    background: var(--danger);
+    color: #fff;
+  }
+
+  /* ---- Editor ---- */
+  .editor-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .editor-section h2 {
+    margin-top: 0;
+    border: none;
+    padding: 0;
+  }
+  .editor-meta label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .editor-meta input {
+    width: 100%;
+    padding: 0.55rem 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+  .editor-meta input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  /* ---- Frontmatter Form ---- */
+  .frontmatter-form {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .frontmatter-form h3 {
+    font-size: 1rem;
+    margin: 0 0 1rem;
+    color: var(--accent-2);
+    font-family: var(--font-mono);
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .form-row:last-child {
+    margin-bottom: 0;
+  }
+  .frontmatter-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .frontmatter-form input,
+  .frontmatter-form textarea {
+    padding: 0.5rem 0.7rem;
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+  }
+  .frontmatter-form input:focus,
+  .frontmatter-form textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  /* ---- Markdown Editor ---- */
+  .markdown-editor {
+    margin: 1.5rem 0;
+  }
+  .markdown-editor h3 {
+    font-size: 1rem;
+    margin: 0 0 0.75rem;
+    color: var(--accent-2);
+    font-family: var(--font-mono);
+  }
+  .markdown-editor textarea {
+    width: 100%;
+    min-height: 400px;
+    padding: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    resize: vertical;
+  }
+  .markdown-editor textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  /* ---- Preview ---- */
+  .preview-section {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .preview-section summary {
+    padding: 0.75rem 1rem;
+    background: var(--panel-2);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--muted);
+  }
+  .preview-section summary:hover {
+    color: var(--accent);
+  }
+  .preview-section .prose {
+    padding: 1rem 1.25rem;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  /* ---- Actions ---- */
+  .editor-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+
+  /* ---- Status ---- */
+  .status-msg {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-family: var(--font-mono);
+  }
+  .status-msg.info {
+    background: color-mix(in srgb, var(--accent-2) 15%, var(--panel));
+    border: 1px solid color-mix(in srgb, var(--accent-2) 40%, transparent);
+    color: var(--accent-2);
+  }
+  .status-msg.success {
+    background: color-mix(in srgb, var(--accent) 15%, var(--panel));
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    color: var(--accent);
+  }
+  .status-msg.error {
+    background: color-mix(in srgb, var(--danger) 15%, var(--panel));
+    border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+    color: var(--danger);
+  }
+
+  .error {
+    color: var(--danger);
+    font-size: 0.9rem;
+    margin-top: 0.75rem;
+  }
+
+  .muted {
+    color: var(--muted);
+  }
+</style>

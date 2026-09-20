@@ -1,0 +1,168 @@
+# Cline Rules — Digimon MMORPG Wiki (Astro)
+
+## 🎯 Project Overview
+
+- **Project**: project-scavenger — remake dari `digidocs` (Docusaurus) → **Astro 5** SSG
+- **Type**: Static site generator (SSG) menggunakan Astro
+- **Fokus**: Dokumentasi lengkap untuk game MMORPG Digimon
+- **Content**: Species digimon, evolution guides, items, dungeon, role/playstyle, player guides.
+- **Deploy**: GitHub Pages project site — `https://andrynzyh.github.io/project-scavenger/` (base `/project-scavenger`)
+
+> 📖 **Sumber kebenaran teknis**: baca [`AGENTS.md`](./AGENTS.md) untuk struktur lengkap, schema Zod (`src/content.config.ts`), routing, base path `/project-scavenger/`, dan key files. File ini hanya ringkasan aturan kerja agent.
+
+---
+
+## Jangan Lakukan
+
+- JANGAN gunakan Docusaurus, VitePress, atau framework lain kecuali diminta
+- JANGAN buat perubahan pada file di `src/content/` tanpa konfirmasi (karena sering diisi manual)
+- JANGAN install dependencies baru tanpa persetujuan
+- JANGAN ubah struktur folder utama tanpa diskusi
+- JANGAN ubah `src/content.config.ts`, `astro.config.mjs`, atau `.github/workflows/` tanpa diskusi (dilindungi CODEOWNERS)
+- JANGAN commit `dist/` (hasil build)
+
+---
+
+## Lakukan
+
+- Selalu gunakan **Content Collections** Astro untuk semua konten
+- Gunakan **schema Zod** di `src/content.config.ts` (Astro 5 convention) untuk validasi
+- Gunakan komponen reusable — cek `src/components/` dulu (sudah ada: `Header`, `Footer`, `EntryIcon`, `WikiCard`, `AccessoryCard`, `TamerList`, `NoviceChallenge`)
+- Selalu tambahkan **frontmatter lengkap** sesuai schema di setiap konten baru
+- Gunakan **TypeScript** (bukan JavaScript) untuk file `.ts`, `.tsx`, `.astro`; `interface` untuk shape, `type` untuk union; hindari `any`
+- Untuk gambar, gunakan format WebP dan simpan di `public/<koleksi>/`
+- Gunakan **CSS variables** untuk styling (`src/styles/global.css` — dark theme; re-skin cukup ganti variabel)
+- Semua link internal wajib lewat `withBase()` dari `src/lib/paths.ts` (base path `/project-scavenger/`)
+
+---
+
+## 📂 Struktur Folder Aktual
+
+```struktur
+src/
+├── components/          # Flat — AccessoryCard, EntryIcon, Footer, Header,
+│                        #   NoviceChallenge, TamerList, WikiCard
+├── content.config.ts    # Schema Zod (Astro 5: di root src, bukan content/)
+├── content/
+│ ├── digimon/           # Explicit collection (strict schema) — subfolder sss/, sssplus/
+│ ├── accessories/       # Explicit collection (Goggles, Digivice, Equipment, Cloth, Guide)
+│ ├── patchnote/         # Explicit collection (version, date, type Major/Hotfix)
+│ ├── dungeon/           # Auto-discovered (Late-Game/, Mid-Game/, overview.md)
+│ ├── guide/             # Auto-discovered
+│ ├── items/             # Auto-discovered
+│ ├── playstyle/         # Auto-discovered (AA, SK, TA)
+│ ├── progression/       # Auto-discovered
+│ └── system/            # Auto-discovered
+├── layouts/
+│ └── BaseLayout.astro   # Satu-satunya layout
+├── lib/                 # navigation.ts, icons.ts, paths.ts, remark-*.mjs
+├── pages/
+│ ├── index.astro        # Landing page
+│ ├── hub.astro          # Hub navigasi kategori
+│ ├── search.astro       # Client-side search (custom, BUKAN Pagefind)
+│ ├── about.astro
+│ ├── admin.astro        # Headless CMS (login password → GitHub API → rebuild)
+│ ├── 404.astro
+│ ├── digimon/           # index.astro + [...slug].astro
+│ ├── accessories/       # index.astro + [...slug].astro
+│ ├── patchnote/         # [...slug].astro
+│ └── [collection]/      # index.astro + [...slug].astro (routing untuk koleksi auto-discovered)
+├── data/                # homepage.json, novice-challenge.json, tamers.json
+└── styles/
+    └── global.css
+```
+
+*Catatan: Selain folder explicit di `content.config.ts` (`digimon`, `accessories`, `patchnote`), folder lain di `src/content/` di-detect otomatis menjadi collection melalui auto-collection scan. Site config (site/base URL) ada di `astro.config.mjs` — deploy target: GitHub Pages (`/project-scavenger/` base path).*
+
+---
+
+## 🧩 Konvensi Kode
+
+1. **Astro Component**
+
+- Gunakan **script dalam komponen** hanya jika diperlukan (minimalkan JS)
+- Gunakan **Props interface** jika komponen menerima props:
+
+```astro
+---
+interface Props {
+  title: string;
+  level?: string;
+  isRookie?: boolean;
+}
+const { title, level = 'Unknown', isRookie = false } = Astro.props;
+---
+```
+
+### 2. Frontmatter Konten
+
+- Setiap file di src/content/digimon/ WAJIB memiliki frontmatter sesuai schema Zod:
+
+--- 
+
+title: "Amphimon"
+emoji: "🐧"
+rank: "SSS"
+stage: "Ultimate"
+attribute: "Data"
+role: "Skill"
+description: "Placeholder description for Amphimon. Edit me."
+tags: ["guide", "sss", "amphimon"]
+icon: Amphimon
+order: 1
+
+---
+
+- Setiap file di src/content/dungeon/ (atau koleksi auto-discovered) memiliki frontmatter sesuai skema dasar:
+
+--- 
+
+title: "Marine Dragon Domain"
+description: "Marine Dragon Domain late-game guide — requirements, mechanics, and boss strategy."
+category: "early game, midgame atau end game"
+tags: ["dungeon", "late-game", "marine-dragon", "boss"]
+order: 1
+
+---
+
+### 3. TypeScript
+
+- Gunakan interface untuk object shape
+- Gunakan type untuk union/enum
+- Hindari any — gunakan unknown jika perlu
+
+### 4. Styling
+
+- Gunakan CSS custom properties untuk tema (dark mode friendly)
+- Gunakan class BEM-ish: .digimon-card__title
+- Jangan inline style, kecuali untuk layout dinamis.
+
+## 🔍 Search & SEO
+
+- Search menggunakan **custom client-side search** (`src/pages/search.astro`): index dibangun saat build dari semua collection (curated + auto). BUKAN Pagefind.
+- Deployment: **GitHub Pages project site** (`site: https://andrynzyh.github.io`, `base: /project-scavenger` di `astro.config.mjs`). Semua link internal wajib lewat `withBase()` dari `src/lib/paths.ts`.
+- Setiap halaman harus memiliki:
+
+> <title> yang deskriptif </title>
+> <meta description>
+> Canonical URL
+
+- Gunakan schema.org untuk structured data Digimon (jika perlu)
+
+## 🧪 Testing & Validation
+
+- Test build: `npm run build` harus sukses tanpa error (exit code 0) — sekaligus memvalidasi Zod schema
+- ⚠️ Jangan pasang `process.on('exit')` di plugin remark — membuat Astro exit code 1 walau build sukses (lihat `src/lib/remark-base-links.mjs`)
+- Pastikan semua konten baru lolos Zod schema validation
+- Jangan commit file di dist/ (hasil build)
+
+## 🔄 Workflow AI (Cline)
+
+Saat diminta untuk membuat/mengedit konten:
+
+- Tanya dulu kategori apa (species, item, dungeon, playstyle, dll)
+- Ikuti frontmatter schema yang sudah ada (`content.config.ts`)
+- Gunakan komponen yang sudah ada (WikiCard, AccessoryCard, EntryIcon, dll) — jangan buat baru jika tidak perlu
+- Koleksi auto-discovered otomatis muncul di navigasi & search — tidak perlu edit `lib/navigation.ts` kecuali ingin custom label/icon
+- **Auto-collection**: buat folder baru di `src/content/` → otomatis jadi koleksi baru tanpa edit kode
+- Jika menambah komponen baru, pastikan TypeScript type safe.

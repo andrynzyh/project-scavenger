@@ -1,0 +1,316 @@
+---
+/**
+ * NoviceChallenge — interactive quest tracker for /system/novice-challenge/.
+ * Injected via SPECIAL_INJECTIONS in src/pages/[collection]/[...slug].astro.
+ *
+ * Layout (per Digimon card):
+ *   ┌──────────────────────────────┐
+ *   │ [icon] Koromon     N stages  │  ← header
+ *   │ (C1) (C2) (C3) (C4) (C5)     │  ← stage tabs
+ *   │ Objectives                   │  ← questslist of the active stage
+ *   │ ┌──────────────────────────┐ │
+ *   │ │ 🎁 Rewards               │ │  ← boxed reward panel
+ *   │ └──────────────────────────┘ │
+ *   └──────────────────────────────┘
+ *
+ * All content is data-driven from src/data/novice-challenge.json:
+ *   challenges[] → { name, slug?, emoji?, image?, stages[] { label?, quests[], rewards[] } }
+ * Every stage is pre-rendered server-side; a tiny client script just flips
+ * which panel is visible (tabs are keyboard-navigable with ← →).
+ */
+import { resolveIcon } from '../lib/icons';
+import EntryIcon from './EntryIcon.astro';
+import { withBase } from '../lib/paths';
+import data from '../data/novice-challenge.json';
+
+interface NCStage {
+  label?: string;
+  quests: string[];
+  rewards: string[];
+}
+interface NCChallenge {
+  name: string;
+  slug?: string;
+  emoji?: string;
+  image?: string;
+  stages: NCStage[];
+}
+const challenges = (data.challenges ?? []) as NCChallenge[];
+
+const esc = (s: string): string =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+/** Escape HTML, then honor **bold** markers written in the JSON strings. */
+const md = (s: string): string =>
+  esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+/** Stable id fragment for aria wiring, e.g. "Koromon" → "koromon" */
+const anchor = (s: string): string =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+---
+
+<section class="nc" aria-labelledby="nc-title">
+  <h2 id="nc-title">{data.title}</h2>
+  {data.note && <p class="nc-note">{data.note}</p>}
+
+  {
+    challenges.map((mon) => {
+      const id = anchor(mon.name);
+      const icon = resolveIcon({
+        collection: 'digimon',
+        slug: mon.slug || id,
+        icon: mon.image,
+      });
+      return (
+        <article class="nc-card panel" data-nc-card>
+          <header class="nc-head">
+            <span class="nc-icon">
+              <EntryIcon name={icon} emoji={mon.emoji ?? '🥚'} />
+            </span>
+            <h3 class="nc-name">
+              {mon.slug ? (
+                <a href={withBase(`/digimon/${mon.slug}/`)}>{mon.name}</a>
+              ) : (
+                mon.name
+              )}
+              <span class="muted nc-suffix">Challenge</span>
+            </h3>
+            <span class="badge nc-count">
+              {mon.stages.length} {mon.stages.length === 1 ? 'stage' : 'stages'}
+            </span>
+          </header>
+
+          <div class="nc-tabs" role="tablist" aria-label={`${mon.name} stages`}>
+            {mon.stages.map((stage, i) => (
+              <button
+                type="button"
+                class:list={['nc-tab', i === 0 && 'is-active']}
+                role="tab"
+                id={`nc-tab-${id}-${i}`}
+                aria-selected={i === 0 ? 'true' : 'false'}
+                aria-controls={`nc-panel-${id}-${i}`}
+                tabindex={i === 0 ? 0 : -1}
+                data-nc-tab
+              >
+                {stage.label ?? `C${i + 1}`}
+              </button>
+            ))}
+          </div>
+
+          {mon.stages.map((stage, i) => (
+            <div
+              class="nc-stage"
+              role="tabpanel"
+              id={`nc-panel-${id}-${i}`}
+              aria-labelledby={`nc-tab-${id}-${i}`}
+              data-nc-stage
+              hidden={i !== 0}
+            >
+              <h4 class="nc-sub">Objectives</h4>
+              <ul class="nc-quests">
+                {stage.quests.map((q) => (
+                  <li set:html={md(q)} />
+                ))}
+              </ul>
+
+              <aside class="nc-reward">
+                <h4 class="nc-sub">🎁 Rewards</h4>
+                <ul class="nc-rewards">
+                  {stage.rewards.map((r) => (
+                    <li set:html={md(r)} />
+                  ))}
+                </ul>
+              </aside>
+            </div>
+          ))}
+        </article>
+      );
+    })
+  }
+</section>
+<script>
+  // Stage tabs: flip the visible panel per card. Arrow keys move between
+  // tabs (roving tabindex), matching the ARIA tabs pattern.
+  const cards = document.querySelectorAll<HTMLElement>('[data-nc-card]');
+  for (const card of cards) {
+    const tabs = Array.from(
+      card.querySelectorAll<HTMLButtonElement>('[data-nc-tab]')
+    );
+    const stages = Array.from(
+      card.querySelectorAll<HTMLElement>('[data-nc-stage]')
+    );
+    if (!tabs.length || tabs.length !== stages.length) continue;
+
+    const activate = (idx: number): void => {
+      tabs.forEach((tab, i) => {
+        const on = i === idx;
+        tab.classList.toggle('is-active', on);
+        tab.setAttribute('aria-selected', String(on));
+        tab.tabIndex = on ? 0 : -1;
+      });
+      stages.forEach((stage, i) => {
+        stage.hidden = i !== idx;
+      });
+    };
+
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => activate(i));
+      tab.addEventListener('keydown', (ev) => {
+        if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+        ev.preventDefault();
+        const dir = ev.key === 'ArrowRight' ? 1 : -1;
+        const next = (i + dir + tabs.length) % tabs.length;
+        activate(next);
+        tabs[next].focus();
+      });
+    });
+  }
+</script>
+
+<style>
+  .nc {
+    margin: 2.5rem 0 0;
+  }
+  .nc-note {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: 0.5rem 0 1.5rem;
+  }
+  .nc-card {
+    --nc-gold: #f5b942; /* reward accent, matches homepage .duo amber */
+    padding: 1.1rem 1.4rem 1.3rem;
+    margin-bottom: 1.5rem;
+  }
+  .nc-head {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin-bottom: 0.9rem;
+  }
+  .nc-icon {
+    width: 46px;
+    height: 46px;
+    flex: none;
+    border-radius: 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.7rem;
+    overflow: hidden;
+  }
+  .nc-name {
+    margin: 0;
+    font-size: 1.15rem;
+    flex: 1;
+    min-width: 0;
+  }
+  .nc-suffix {
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-left: 0.45rem;
+  }
+  .nc-count {
+    flex: none;
+    color: var(--accent-2);
+    border-color: color-mix(in srgb, var(--accent-2) 40%, transparent);
+  }
+  /* stage tabs */
+  .nc-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    padding-bottom: 0.9rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px dashed var(--border);
+  }
+  .nc-tab {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    padding: 0.4rem 0.9rem;
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  .nc-tab:hover {
+    color: var(--text);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  .nc-tab.is-active {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--panel));
+    font-weight: 700;
+  }
+
+  /* active stage body */
+  .nc-sub {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+  }
+  .nc-quests {
+    margin: 0 0 1.1rem;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.4rem;
+  }
+  .nc-quests li {
+    position: relative;
+    padding-left: 1.3rem;
+    line-height: 1.55;
+    font-size: 0.95rem;
+  }
+  .nc-quests li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+  .nc-quests :global(strong) {
+    color: var(--accent-2);
+    font-weight: 700;
+  }
+
+  /* boxed rewards */
+  .nc-reward {
+    border: 1.5px solid color-mix(in srgb, var(--nc-gold) 55%, transparent);
+    background: color-mix(in srgb, var(--nc-gold) 7%, var(--panel));
+    border-radius: var(--radius);
+    padding: 0.85rem 1.05rem 0.95rem;
+    max-width: 560px;
+  }
+  .nc-reward .nc-sub {
+    color: var(--nc-gold);
+  }
+  .nc-rewards {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.3rem;
+  }
+  .nc-rewards li {
+    position: relative;
+    padding-left: 1.3rem;
+    line-height: 1.5;
+    font-size: 0.9rem;
+  }
+  .nc-rewards li::before {
+    content: '✦';
+    position: absolute;
+    left: 0;
+    color: var(--nc-gold);
+  }
+</style>
+

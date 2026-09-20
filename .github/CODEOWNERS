@@ -1,0 +1,24 @@
+# CODEOWNERS — siapa yang wajib menyetujui perubahan pada file-area tertentu.
+# Format: <pola path> @<owner>
+
+# Perubahan pada area sensitif membutuhkan persetujuan maintainer:
+* @andrynzyh
+
+# Schema Zod — sumber kebenaran semua frontmatter; salah ubah = build seluruh konten gagal
+/src/content.config.ts @andrynzyh
+
+# Konfigurasi & build
+/astro.config.mjs @andrynzyh
+/package.json @andrynzyh
+/package-lock.json @andrynzyh
+/tsconfig.json @andrynzyh
+
+# Workflow CI/CD — jangan diubah tanpa persetujuan
+/.github/workflows/ @andrynzyh
+
+# Lisensi & governance
+/LICENSE @andrynzyh
+/CONTENT_LICENSE.md @andrynzyh
+/SECURITY.md @andrynzyh
+/CODE_OF_CONDUCT.md @andrynzyh
+/GOVERNANCE.md @andrynzyh

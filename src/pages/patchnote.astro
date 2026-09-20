@@ -1,0 +1,210 @@
+---
+/**
+ * PATCH NOTE — render patch terbaru langsung di /patchnote.
+ * Entry terbaru ditentukan dari field `date` (terbesar = terbaru).
+ * Arsip semua patch tetap tersedia di /patchnote/<slug>/.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import EntryIcon from '../components/EntryIcon.astro';
+import { getCollection, render } from 'astro:content';
+import { resolveIcon } from '../lib/icons';
+import { withBase } from '../lib/paths';
+
+const entries = await getCollection('patchnote');
+const sorted = [...entries].sort(
+  (a, b) => +new Date(b.data.date) - +new Date(a.data.date)
+);
+
+const latest = sorted[0];
+const older = sorted.slice(1);
+
+const { Content } = await render(latest);
+const data = latest.data;
+const icon = resolveIcon({ collection: 'patchnote', slug: latest.id, icon: data.icon });
+
+const fmtDate = (d: string | Date) => {
+  const date = typeof d === 'string' ? new Date(d) : d;
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+};
+---
+
+<BaseLayout
+  title={`${data.title} — project-scavenger`}
+  description={data.description}
+>
+  <article>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href={withBase('/hub/')}>← All Entries</a> <span>/</span>
+      <span class="here">Patch Notes</span>
+    </nav>
+
+    <header class="head panel">
+      <EntryIcon name={icon} emoji={data.emoji} class="emoji" />
+      <div class="head-body">
+        <p class="eyebrow">Latest Patch</p>
+        <h1>{data.title}</h1>
+        <div class="meta">
+          {data.type && <span class={`type type-${String(data.type).toLowerCase()}`}>{data.type}</span>}
+          <span class="date">{fmtDate(data.date)}</span>
+        </div>
+        {data.description && <p class="lead">{data.description}</p>}
+      </div>
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    {older.length > 0 && (
+      <details class="archive panel">
+        <summary>Patch Archive <span class="count">{older.length}</span></summary>
+        <ul class="archive-list">
+          {older.map((p) => (
+            <li>
+              <a href={withBase(`/patchnote/${p.id}/`)}>
+                <span class="a-title">{p.data.title}</span>
+                <span class="a-date">{fmtDate(p.data.date)}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
+    )}
+  </article>
+</BaseLayout>
+
+<style>
+  article {
+    max-width: 52rem;
+    margin-inline: auto;
+    padding: 2rem 0 4rem;
+  }
+
+  .crumbs {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--muted);
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+  .here { color: var(--accent); }
+
+  .head {
+    display: flex;
+    gap: 1.1rem;
+    align-items: flex-start;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .head :global(.emoji) {
+    font-size: 4rem;
+    line-height: 1;
+    flex: none;
+    width: 1em;
+  }
+  .head-body { flex: 1; min-width: 0; }
+  .eyebrow {
+    margin: 0 0 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+  }
+  .head h1 {
+    margin: 0 0 0.4rem;
+    font-size: clamp(1.6rem, 4vw, 2.1rem);
+    border: none;
+    padding: 0;
+  }
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+  }
+  .date {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .type {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  .type-major {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+  .type-hotfix { color: var(--muted); }
+  .lead {
+    margin: 0;
+    font-weight: 600;
+    font-size: 0.98rem;
+    color: var(--text);
+  }
+
+  .prose { margin-bottom: 2rem; }
+
+  .archive {
+    margin-top: 2rem;
+    padding: 1rem 1.25rem;
+  }
+  .archive summary {
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    user-select: none;
+  }
+  .archive summary::-webkit-details-marker { display: none; }
+  .archive[open] summary { color: var(--accent-2); margin-bottom: 0.75rem; }
+  .count {
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+  .archive-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .archive-list a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 0.9rem;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .archive-list a:hover {
+    background: var(--panel-2);
+    color: var(--accent);
+  }
+  .a-title { font-weight: 600; }
+  .a-date {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+</style>

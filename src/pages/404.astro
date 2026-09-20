@@ -1,0 +1,63 @@
+---
+/**
+ * 404 — served by GitHub Pages as /404.html for any unknown URL.
+ * Zero-JS: pure static links back into the wiki.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/paths';
+
+const links = [
+  { href: withBase('/'), label: '← Back to home' },
+  { href: withBase('/hub/'), label: 'All entries' },
+  { href: withBase('/search/'), label: 'Search the wiki' },
+];
+---
+
+<BaseLayout
+  title="404 — Page not found — project-scavenger"
+  description="This page got deleted, moved, or never hatched from its DigiEgg."
+>
+  <section class="nf">
+    <p class="code" aria-hidden="true">404</p>
+    <h1>Lost in the Digital World</h1>
+    <p class="lead muted">
+      The page you are looking for was deleted, moved, or never hatched from
+      its DigiEgg. Try one of the digivices below:
+    </p>
+    <div class="actions">
+      {links.map((link) => <a class="btn" href={link.href}>{link.label}</a>)}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf {
+    padding: 4rem 0 5rem;
+    max-width: 720px;
+    margin-inline: auto;
+    text-align: center;
+  }
+  .code {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: clamp(4rem, 14vw, 7rem);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--accent);
+    text-shadow: 0 0 32px rgba(41, 241, 156, 0.45);
+  }
+  h1 {
+    margin: 1rem 0 0.75rem;
+  }
+  .lead {
+    font-size: 1.05rem;
+    line-height: 1.65;
+    margin-bottom: 2rem;
+  }
+  .actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+</style>

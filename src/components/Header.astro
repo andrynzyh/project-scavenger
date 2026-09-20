@@ -1,0 +1,112 @@
+---
+import { withBase, BASE } from '../lib/paths';
+
+/** Remove the deploy base ("/project-scavenger") and trailing slashes → '/', '/digimon', ... */
+const strip = (p: string): string => {
+  const noSlash = p.replace(/\/+$/, '');
+  const withoutBase =
+    BASE && noSlash.startsWith(BASE) ? noSlash.slice(BASE.length) : noSlash;
+  return withoutBase || '/';
+};
+
+const current = strip(Astro.url.pathname);
+
+const links = [
+  { href: withBase('/'), label: 'Home' },
+  { href: withBase('/about/'), label: 'About' },
+  { href: withBase('/search/'), label: 'Search' },
+];
+
+const isActive = (href: string): boolean => {
+  const target = strip(href);
+  // Home: exact match only — otherwise '/project-scavenger/digimon' would match '/' and
+  // keep Home underlined on every page.
+  if (target === '/') return current === '/';
+  // Section: active on the section index and any child page.
+  return current === target || current.startsWith(target + '/');
+};
+---
+
+<header>
+  <div class="container bar">
+    <a class="logo" href={withBase("/")}>
+      project-<span>62</span>
+    </a>
+    <nav aria-label="Main navigation">
+      {
+        links.map((link) => (
+          <a href={link.href} class:list={[{ active: isActive(link.href) }]}>
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</header>
+
+<style>
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    min-height: 56px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    position: absolute;
+    left: 1.25rem;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+  .logo span {
+    color: var(--accent);
+  }
+  .logo:hover { color: #ffffff; }
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+  nav a {
+    font-size: 0.92rem;
+    padding: 0.35rem 0;
+    color: var(--muted);
+    position: relative;
+    transition: color 0.15s ease;
+  }
+  nav a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 100%;
+    bottom: 0;
+    height: 2px;
+    background: var(--accent);
+    transition: right 0.2s ease;
+  }
+  nav a:hover {
+    color: var(--text);
+  }
+  nav a:hover::after,
+  nav a.active::after {
+    right: 0;
+  }
+  nav a.active {
+    color: var(--accent);
+  }
+</style>

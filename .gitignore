@@ -1,0 +1,27 @@
+# ---- Dependencies ----
+node_modules/
+
+# ---- Build output ----
+dist/
+.astro/
+
+# ---- Environment & secrets ----
+.env
+.env.*
+!.env.example
+
+# ---- Logs & caches ----
+*.log
+npm-debug.log*
+.DS_Store
+
+# ---- Editor & OS ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+Thumbs.db
+
+# ---- AI/agent tool configs (boleh berisi API key) ----
+.continue/
+.agents/

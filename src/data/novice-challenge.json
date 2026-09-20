@@ -1,0 +1,462 @@
+{
+  "title": "List of Quest",
+  "note": "Interactive overview — tap C1 / C2 / C3 … on a card to flip between that challenge's stages. Each stage shows its objectives and reward box. The questline is one-shot, so choose wisely.",
+  "challenges": [
+    {
+      "name": "Koromon",
+      "slug": "",
+      "emoji": "🌱",
+      "image": "",
+      "stages": [
+        {
+          "label": "C1",
+          "quests": [
+            "Defeat **Kuwagamon Raid** (Silver Lake) ×1",
+            "Defeat **Meramon Raid** (Silent Forest) ×1",
+            "Defeat **Ogremon Raid** (Silent Forest) ×1"
+          ],
+          "rewards": [
+            "Novice Clothes Box ×1",
+            "Novice Smart School Uniform ×1",
+            "Challenge Coin ×3",
+            "Digimon Enhancement Buff Package ×10",
+            "Essential Vitamins ×100"
+          ]
+        },
+        {
+          "label": "C2",
+          "quests": [
+            "Defeat **Leomon Raid** (Lost Historic Site) ×1",
+            "Defeat **Monochromon Raid** (Waterfront) ×1"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Jogress DigiEgg Exchange Ticket ×1",
+            "Expansion Package ×5",
+            "Evoluter ×50"
+          ]
+        },
+        {
+          "label": "C3",
+          "quests": [
+            "Defeat **Devimon Raid** (Infinite Mountain Dungeon) ×1"
+          ],
+          "rewards": [
+            "Challenge Coin ×1",
+            "Tamer Exchange Ticket ×1",
+            "Tamer Skill Exchange Ticket ×2",
+            "**Achievement:** Will of Progress ×1"
+          ]
+        },
+        {
+          "label": "C4",
+          "quests": [
+            "Defeat **Etemon Raid** (Server Continent Desert) ×1",
+            "Defeat **SkullGreymon Raid** (Server Continent Desert) ×1"
+          ],
+          "rewards": [
+            "Challenge Coin ×2",
+            "Evoluter ×50",
+            "Seal Opener ×300"
+          ]
+        },
+        {
+          "label": "C5",
+          "quests": [
+            "Defeat **Etemon** (Datamon Dungeon Easy) ×1",
+            "Defeat **Nanomon** (Datamon Dungeon Easy) ×1"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Jogress DigiEgg Exchange Ticket ×1",
+            "BM DigiEgg Exchange Ticket ×1",
+            "Jogress Chip Box [30D] ×1",
+            "Dark Chocolate ×300"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tsunomon",
+      "slug": "",
+      "emoji": "🔔",
+      "image": "",
+      "stages": [
+        {
+          "label": "C1",
+          "quests": [
+            "Defeat **Guilmon** (DataDestroyer) Boss (Snowstorm Village) ×5",
+            "Defeat **Okuwamon** (Tyrant of Darkness) Boss (Frozen Ground) ×5",
+            "Defeat **Mammothmon** (Clairvoyance in Darkness) Boss (Snowman Village) ×5"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Option Change Stone ×200",
+            "Number Change Stone ×200"
+          ]
+        },
+        {
+          "label": "C2",
+          "quests": [
+            "Defeat **SkullMeramon** (Ruler of the Flame) Boss (Dark Tower Wasteland) ×5",
+            "Defeat **Vikemon** (Army Defector) Boss (Distorted Data Village) ×5",
+            "Defeat **MetalEtemon** (King of Digimon) Boss (Distorted Data Village) ×5"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Jogress DigiEgg Exchange Ticket ×1",
+            "DigiCore ×300",
+            "Data of Overload ×45"
+          ]
+        },
+        {
+          "label": "C3",
+          "quests": [
+            "Defeat **Gryphomon** (Guardian of Ruin) Boss (Infinite Ice Wall) ×5",
+            "Defeat **SkullGreymon** (Outlaw Immortal) Boss (Infinite Ice Wall) ×5",
+            "Defeat **GizumonAT** (DigimonDestroyer) Boss (Infinite Ice Wall) ×5",
+            "Defeat **GizumonXT** (DigimonDestroyer) Boss (Infinite Ice Wall) ×5"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Jogress DigiEgg Exchange Ticket ×1",
+            "BM DigiEgg Exchange Ticket ×1",
+            "Reinforced DigiClone Set ×5",
+            "Mega Reinforced DigiClone Set ×5"
+          ]
+        },
+        {
+          "label": "C4",
+          "quests": [
+            "Defeat **Garurumon X Raid** (Distorted Data Village) ×1"
+          ],
+          "rewards": [
+            "Challenge Coin ×1",
+            "Digimon Enhancement Buff Package ×20",
+            "Dark Chocolate ×300"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Agumon",
+      "slug": "",
+      "emoji": "🦖",
+      "image": "",
+      "stages": [
+        {
+          "label": "C1",
+          "quests": [
+            "Defeat **Mugendramon Raid** (Village of the Beginning) ×3",
+            "Defeat **Belphemon: Rage Mode Raid** (Western Area: Outskirts) ×3",
+            "Defeat **Garurumon X Raid** (Distorted Data Village) ×3"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Mysterious Armor Digi-Egg Box ×1",
+            "Reinforced DigiClone Set ×10",
+            "Special Chicken Combo ×100"
+          ]
+        },
+        {
+          "label": "C2",
+          "quests": [
+            "Defeat **Kimeramon** (Kaiser's Laboratory (Normal)) ×1"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Mysterious Armor Digi-Egg Box ×1"
+          ]
+        },
+        {
+          "label": "C3",
+          "quests": [
+            "Defeat **Diaboromon** (Digimon Maze F4) ×30"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Dark Chocolate ×300"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Gabumon",
+      "slug": "",
+      "emoji": "🐺",
+      "image": "",
+      "stages": [
+        {
+          "label": "C1",
+          "quests": [
+            "Defeat **Soulmon** (Colossal) Boss (Valley of Light) ×5",
+            "Defeat **Sangloupmon** (King of the Wolves) Boss (Shibuya) ×5",
+            "Defeat **Doggymon** (Pumpkinmon's Friend) Boss (Shibuya) ×5"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Seal Exchange Ticket ×500"
+          ]
+        },
+        {
+          "label": "C2",
+          "quests": [
+            "Defeat **Meramon** (Gigantic) Boss (Tokyo Tower) ×5",
+            "Defeat **Gesomon** (White Demon of Abyss) Boss (Minato City) ×5",
+            "Defeat **Witchmon** (Wizardmon's Rival) Boss (Minato City) ×5",
+            "Defeat **Tylomon** (Megalodon) Boss (Minato City) ×5",
+            "Defeat **Toucanmon** (Tonka) Boss (Minato City) ×5"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Seal Exchange Ticket ×500"
+          ]
+        },
+        {
+          "label": "C3",
+          "quests": [
+            "Defeat **WereGarurumon (Black)** (Despicable Wolf) Boss (Odaiba) ×5",
+            "Defeat **Knightmon** (Cavalry Lord) Boss (Odaiba) ×5"
+          ],
+          "rewards": [
+            "Challenge Coin ×2",
+            "Seal Exchange Ticket ×500",
+            "Seal Opener ×300",
+            "Dark Chocolate ×300"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Greymon",
+      "slug": "",
+      "emoji": "🔥",
+      "image": "",
+      "stages": [
+        {
+          "label": "C1",
+          "quests": [
+            "Defeat **Xuanwumon** (Scar of Water (Normal)) ×10",
+            "Defeat **Zhuqiaomon** (Uprising Flame (Normal)) ×10",
+            "Defeat **Baihumon** (Trace of Black Steel (Normal)) ×10",
+            "Defeat **Qinglongmon** (Descending Thunder God (Normal)) ×10",
+            "Defeat **Devimon** (Crack of Devimon (Hard)) ×10"
+          ],
+          "rewards": [
+            "Challenge Coin ×5",
+            "Random Gear Box (EDG) ×5",
+            "Random Gear Box (ZDG) ×5",
+            "Random Gear Box (BDG) ×5",
+            "Random Gear Box (QDG) ×5",
+            "Option Change Stone Package ×5"
+          ]
+        },
+        {
+          "label": "C2",
+          "quests": [
+            "Defeat **Lucemon Satan Mode** (Infinite Mountain Dungeon 2.0) ×7"
+          ],
+          "rewards": [
+            "Challenge Coin ×2",
+            "Demon Lord Random DigiEgg Alpha ×3",
+            "Demon Lord Random DigiEgg Beta ×3",
+            "Fruit of Chaos ×10"
+          ]
+        },
+        {
+          "label": "C3",
+          "quests": [
+            "Defeat **KaiserGreymon Boss** (Verdandi) ×100",
+            "Defeat **Susanoomon Raid** (Verdandi) ×30"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Bokomon's Book of Knowledge ×2",
+            "Fruit of Genesis ×5"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Garurumon",
+      "slug": "",
+      "emoji": "❄️",
+      "image": "",
+      "stages": [
+        {
+          "label": "C1",
+          "quests": [
+            "Defeat **Baihumon Boss** (Colosseum Normal Mode R39) ×4",
+            "Defeat **Omegamon Zwart** (Royal Knight Dominion) ×4",
+            "Defeat **Omegamon Alter-S** (Royal Knight Dominion) ×4"
+          ],
+          "rewards": [
+            "Challenge Coin ×5",
+            "Amplification Booster +1000% ×50",
+            "Mercenary Slot Expansion ×2",
+            "Fruit of Homeostasis ×500",
+            "Special Chicken Combo ×100",
+            "X-Protector ×50"
+          ]
+        },
+        {
+          "label": "C2",
+          "quests": [
+            "Defeat **MagnaGarurumon Boss** (Verdandi) ×100",
+            "Defeat **Susanoomon Raid** (Verdandi) ×30"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "Bokomon's Book of Knowledge ×2",
+            "Fruit of Genesis ×5"
+          ]
+        },
+        {
+          "label": "C3",
+          "quests": [
+            "Defeat **GrandisKuwagamon** (Evolved) Boss (Verdandi) ×3",
+            "Defeat **TigerVespamon** (Evolved) Boss (Verdandi) ×3",
+            "Defeat **Dorugoramon** (Evolved) Boss (Verdandi) ×3",
+            "Defeat **GranDracmon** (Evolved) Boss (Verdandi) ×3"
+          ],
+          "rewards": [
+            "Challenge Coin ×3",
+            "X-Antibody ×2000"
+          ]
+        },
+        {
+          "label": "C4",
+          "quests": [
+            "Defeat **Omegamon** (Royal Knight) Raid (Verdandi) ×3"
+          ],
+          "rewards": [
+            "Challenge Coin ×1",
+            "Omegamon Seal ×50",
+            "Dark Chocolate ×300"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MetalGreymon",
+      "slug": "",
+      "emoji": "🤖",
+      "image": "",
+      "stages": [
+        {
+          "label": "C1",
+          "quests": [
+            "Defeat **Xuanwumon** (Scar of Water (Hard)) ×10",
+            "Defeat **Zhuqiaomon** (Uprising Flame (Hard)) ×10",
+            "Defeat **Baihumon** (Trace of Black Steel (Hard)) ×10",
+            "Defeat **Qinglongmon** (Descending Thunder God (Hard)) ×10"
+          ],
+          "rewards": [
+            "Challenge Coin ×1",
+            "Ring of Four Holy Beasts [Lv.1]",
+            "Necklace of Four Holy Beasts [Lv.1]",
+            "Earring of Four Holy Beasts [Lv.1]",
+            "Royal DigiVice ×1"
+          ]
+        },
+        {
+          "label": "C2",
+          "quests": [
+            "Defeat **Fanglongmon** (Boundaries of Yin and Yang (Normal/SSS)) ×100"
+          ],
+          "rewards": [
+            "Challenge Coin ×1",
+            "Divine Crystal ×1",
+            "Dark Chocolate ×300"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "WareGarurumon",
+      "slug": "",
+      "emoji": "🦖",
+      "image": "",
+      "stages": [
+        {
+          "label": "C1",
+          "quests": [
+            "Defeat Myotismon Raid (Big Sight) x9",
+            "Defeat DarkTyranomon Raid (Big Sight) x9"
+          ],
+          "rewards": [
+            "Challenge Coin ×1",
+            "Dark Chocolate ×300",
+            "Random Attribute Rank C Box ×5",
+            "High Monster Card Lv.1 ×150"
+          ]
+        },
+        {
+          "label": "C2",
+          "quests": [
+            "Defeat Death-X-mon (Royal Base (Normal)) ×10"
+          ],
+          "rewards": [
+            "Challenge Coin ×1",
+            "Yggdrasil's Record ×1"
+          ]
+        },
+        {
+          "label": "C3",
+          "quests": [
+            "Defeat Myotismon (Fuji TV Rooftop (Dungeon)) x7",
+            "Defeat SkullMeramon (Tokyo Tower Observatory (Dungeon)) x7",
+            "Defeat VenomMyotismon (Venomous Vortex) x7"
+          ],
+          "rewards": [
+            "Challenge Coin x1",
+            "Soul of Myotismon x1",
+            "SkullMeramon's DigiCore x5",
+            "VenomMyotismon's Venom x2"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "WareGreymon",
+      "slug": "",
+      "emoji": "🤖",
+      "image": "",
+      "stages": [
+        {
+          "label": "C1",
+          "quests": [
+            "Defeat **Xuanwumon** (Scar of Water (Hard)) ×10",
+            "Defeat **Zhuqiaomon** (Uprising Flame (Hard)) ×10",
+            "Defeat **Baihumon** (Trace of Black Steel (Hard)) ×10",
+            "Defeat **Qinglongmon** (Descending Thunder God (Hard)) ×10"
+          ],
+          "rewards": [
+            "Challenge Coin ×1",
+            "Highest Skill Memory Capsule [Attack/Defense/Support] x3, Berserk Arena Box x10, Option Change Stone Package x2"]
+          }
+              ]
+    },
+    {
+      "name": "MetalGarurumon",
+      "slug": "",
+      "emoji": "🤖",
+      "image": "",
+      "stages": [
+        {
+          "label": "C1",
+          "quests": [
+            "Defeat Digitalize of Soul Questitem (Colosseum Hero Mode R13/Extreme Mode R4) x10",
+            "Defeat Omegamon Alter-S (Berserk Arena) x10",
+            "Defeat Vajramon (Vajramon Dungeon (Hard)) x10"
+          ],
+          "rewards": [
+            "Challenge Coin x1",
+            "Skill Memory Cube Lv4 [Attack/Defense/Support] x3, Berserk Arena Box x10, Option Change Stone Package x2"
+          ]
+        }
+      ]
+    }
+
+  ]
+}

@@ -1,0 +1,43 @@
+# CI — menjalankan build di setiap PR & push ke main.
+# Build = validasi utama (semua frontmatter Zod + remark plugins).
+# PR wajib lolos workflow ini sebelum bisa merge (branch protection).
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-validate:
+    name: Build & validasi Zod
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (validasi Zod + base links)
+        run: npm run build
+
+      - name: Verifikasi output build
+        run: |
+          test -d dist && echo "✅ build sukses — dist/ ada"
+          test -f dist/index.html && echo "✅ index.html ter-generate"
+          # Pastikan base path /project-scavenger/ dipakai (GH Pages project site)
+          grep -q 'href="/project-scavenger/' dist/index.html && echo "✅ base path /project-scavenger/ terbaca" || echo "⚠️ base path tidak terdeteksi di index — cek astro.config.mjs"

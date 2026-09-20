@@ -1,0 +1,10 @@
+# NOTE for GitHub Pages PROJECT sites (andrynzyh.github.io/project-scavenger/):
+# crawlers only read /robots.txt from the DOMAIN ROOT, which this repo does
+# not control. This file takes effect immediately when the site is served
+# from a domain root (custom domain / Vercel). Submit the sitemap URL below
+# via Google Search Console in the meantime.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://andrynzyh.github.io/project-scavenger/sitemap-index.xml
