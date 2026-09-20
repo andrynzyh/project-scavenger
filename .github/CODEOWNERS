@@ -4,8 +4,9 @@
 # Perubahan pada area sensitif membutuhkan persetujuan maintainer:
 * @andrynzyh
 
-# Schema Zod — sumber kebenaran semua frontmatter; salah ubah = build seluruh konten gagal
+# Schema Zod & registry koleksi — sumber kebenaran frontmatter + metadata UI
 /src/content.config.ts @andrynzyh
+/src/lib/collections.ts @andrynzyh
 
 # Konfigurasi & build
 /astro.config.mjs @andrynzyh
@@ -16,9 +17,5 @@
 # Workflow CI/CD — jangan diubah tanpa persetujuan
 /.github/workflows/ @andrynzyh
 
-# Lisensi & governance
+# Lisensi
 /LICENSE @andrynzyh
-/CONTENT_LICENSE.md @andrynzyh
-/SECURITY.md @andrynzyh
-/CODE_OF_CONDUCT.md @andrynzyh
-/GOVERNANCE.md @andrynzyh

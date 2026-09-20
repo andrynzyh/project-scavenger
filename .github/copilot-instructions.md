@@ -14,7 +14,7 @@ Wiki statis **Bahasa Inggris** untuk MMORPG Digimon, dibangun dengan **Astro 5**
 - **Komunikasi**: selalu Bahasa Indonesia (aturan di atas).
 - **Kode & komentar di dalam file**: bahasa Inggris, sesuai konvensi yang sudah ada.
 - **Konten**: Bahasa Inggris; frontmatter keys tetap bahasa Inggris.
-- **Instruksi teknis lengkap** (perintah, struktur, schema, konvensi kode): baca [`AGENTS.md`](./AGENTS.md) — file itu sumber kebenaran untuk konvensi teknis.
-- **Kontribusi & governance**: ikuti [`CONTRIBUTING.md`](./CONTRIBUTING.md) dan [`GOVERNANCE.md`](./GOVERNANCE.md) (model PR + review, `main` dilindungi).
+- **Instruksi teknis lengkap** (perintah, struktur, schema, konvensi kode): baca [`README.md`](./README.md) — sumber kebenaran untuk konvensi teknis.
+- **Kontribusi**: lewat pull request — `npm run build` wajib hijau sebelum merge (validasi Zod).
 
 > **Catatan**: proyek ini adalah remake dari `digidocs` (Docusaurus) — jangan bawa pola Docusaurus ke sini. Proyek Astro ini adalah sumber kebenaran.
